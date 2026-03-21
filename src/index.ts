@@ -13,10 +13,39 @@ const MODELS = {
   "nano-banana-pro": "gemini-3-pro-image-preview",
 } as const;
 
+// ─── Safe MIME → extension allowlist ─────────────────────────────────────────
+
+const MIME_TO_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+// ─── Environment (validated at startup) ──────────────────────────────────────
+
+const apiKey = process.env.NANO_BANANA_API_KEY ?? process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  console.error("Error: NANO_BANANA_API_KEY or GEMINI_API_KEY environment variable is not set");
+  process.exit(1);
+}
+
+// When set, all outputDir values are resolved relative to this base and
+// sandboxed within it. Recommended for production deployments.
+const outputBaseDir = process.env.NANO_BANANA_OUTPUT_DIR
+  ? path.resolve(process.env.NANO_BANANA_OUTPUT_DIR)
+  : null;
+
+const ai = new GoogleGenAI({ apiKey });
+
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
 const GenerateImageSchema = {
-  prompt: z.string().describe("Text prompt describing the image to generate"),
+  prompt: z
+    .string()
+    .min(1)
+    .max(10_000)
+    .describe("Text prompt describing the image to generate"),
 
   model: z
     .enum(["nano-banana-2", "nano-banana-pro"])
@@ -33,13 +62,6 @@ const GenerateImageSchema = {
     .default("1:1")
     .describe("Aspect ratio of the generated image"),
 
-  thinkingLevel: z
-    .enum(["none", "low", "medium", "high"])
-    .default("medium")
-    .describe(
-      "Depth of model reasoning before generation. none disables thinking; high produces the most refined output at higher cost"
-    ),
-
   mode: z
     .enum(["image", "image_and_text"])
     .default("image")
@@ -55,8 +77,31 @@ const GenerateImageSchema = {
 
   outputDir: z
     .string()
-    .describe("Directory path where generated images will be saved"),
+    .default(".")
+    .describe(
+      "Directory path where generated images will be saved. " +
+      "If NANO_BANANA_OUTPUT_DIR is set, relative paths are resolved from that base " +
+      "and all paths are sandboxed within it."
+    ),
 };
+
+// ─── Path sandbox helper ──────────────────────────────────────────────────────
+
+function resolveOutputDir(outputDir: string): string {
+  if (outputBaseDir !== null) {
+    const resolved = path.resolve(outputBaseDir, outputDir);
+    const isInside =
+      resolved === outputBaseDir ||
+      resolved.startsWith(outputBaseDir + path.sep);
+    if (!isInside) {
+      throw new Error(
+        `outputDir is outside the allowed base directory (NANO_BANANA_OUTPUT_DIR=${outputBaseDir})`
+      );
+    }
+    return resolved;
+  }
+  return path.resolve(outputDir);
+}
 
 // ─── Server ──────────────────────────────────────────────────────────────────
 
@@ -74,13 +119,8 @@ server.registerTool(
       "Images are saved to disk and the file paths are returned.",
     inputSchema: GenerateImageSchema,
   },
-  async ({ prompt, model, resolution, aspectRatio, thinkingLevel, mode, numberOfImages, outputDir }) => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY environment variable is not set");
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+  async ({ prompt, model, resolution, aspectRatio, mode, numberOfImages, outputDir }) => {
+    const resolvedDir = resolveOutputDir(outputDir);
 
     const responseModalities = mode === "image" ? ["IMAGE"] : ["TEXT", "IMAGE"];
 
@@ -93,21 +133,21 @@ server.registerTool(
       },
     };
 
-    if (thinkingLevel !== "none") {
-      config.thinkingConfig = {
-        thinkingLevel: thinkingLevel.toUpperCase(),
-      };
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: MODELS[model],
+        contents: prompt,
+        config,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      throw new Error(`Image generation failed: ${message}`);
     }
-
-    const response = await ai.models.generateContent({
-      model: MODELS[model],
-      contents: prompt,
-      config,
-    });
 
     const parts = response.candidates?.[0]?.content?.parts ?? [];
 
-    fs.mkdirSync(outputDir, { recursive: true });
+    await fs.promises.mkdir(resolvedDir, { recursive: true });
 
     const savedFiles: string[] = [];
     let textContent = "";
@@ -115,10 +155,10 @@ server.registerTool(
     for (const part of parts) {
       if (part.inlineData?.data) {
         const mimeType = part.inlineData.mimeType ?? "image/png";
-        const ext = mimeType.split("/")[1] ?? "png";
+        const ext = MIME_TO_EXT[mimeType] ?? "png";
         const filename = `${Date.now()}-${savedFiles.length + 1}.${ext}`;
-        const filePath = path.resolve(outputDir, filename);
-        fs.writeFileSync(filePath, Buffer.from(part.inlineData.data, "base64"));
+        const filePath = path.join(resolvedDir, filename);
+        await fs.promises.writeFile(filePath, Buffer.from(part.inlineData.data, "base64"));
         savedFiles.push(filePath);
       } else if (typeof part.text === "string" && part.text.trim()) {
         textContent += part.text;
@@ -132,7 +172,7 @@ server.registerTool(
     const result: Record<string, unknown> = {
       model: MODELS[model],
       savedFiles,
-      settings: { resolution, aspectRatio, thinkingLevel, mode, numberOfImages },
+      settings: { resolution, aspectRatio, mode, numberOfImages },
     };
     if (textContent) {
       result.description = textContent.trim();
