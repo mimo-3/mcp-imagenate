@@ -13,13 +13,21 @@ const MODELS = {
   "nano-banana-pro": "gemini-3-pro-image-preview",
 } as const;
 
-// ─── Safe MIME → extension allowlist ─────────────────────────────────────────
+// ─── MIME / extension allowlists ─────────────────────────────────────────────
 
 const MIME_TO_EXT: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
   "image/webp": "webp",
   "image/gif": "gif",
+};
+
+const EXT_TO_MIME: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+  gif: "image/gif",
 };
 
 // ─── Environment (validated at startup) ──────────────────────────────────────
@@ -83,6 +91,14 @@ const GenerateImageSchema = {
       "If NANO_BANANA_OUTPUT_DIR is set, relative paths are resolved from that base " +
       "and all paths are sandboxed within it."
     ),
+
+  inputImages: z
+    .array(z.string())
+    .optional()
+    .describe(
+      "File paths of images to include as input alongside the prompt (supports PNG, JPEG, WEBP, GIF). " +
+      "Useful for image editing, style reference, or multi-image instructions. nano-banana-pro only."
+    ),
 };
 
 // ─── Path sandbox helper ──────────────────────────────────────────────────────
@@ -119,8 +135,34 @@ server.registerTool(
       "Images are saved to disk and the file paths are returned.",
     inputSchema: GenerateImageSchema,
   },
-  async ({ prompt, model, resolution, aspectRatio, mode, numberOfImages, outputDir }) => {
+  async ({ prompt, model, resolution, aspectRatio, mode, numberOfImages, outputDir, inputImages }) => {
     const resolvedDir = resolveOutputDir(outputDir);
+
+    // Build contents: [image parts..., text prompt]
+    type Part = { text: string } | { inlineData: { mimeType: string; data: string } };
+    const contentParts: Part[] = [];
+
+    if (inputImages && inputImages.length > 0) {
+      if (model !== "nano-banana-pro") {
+        throw new Error("inputImages is only supported with nano-banana-pro");
+      }
+      for (const imagePath of inputImages) {
+        const resolvedPath = path.resolve(imagePath);
+        const ext = path.extname(resolvedPath).toLowerCase().slice(1);
+        const mimeType = EXT_TO_MIME[ext];
+        if (!mimeType) {
+          throw new Error(`Unsupported input image format: .${ext}. Supported: png, jpg, jpeg, webp, gif`);
+        }
+        let imageData: Buffer;
+        try {
+          imageData = await fs.promises.readFile(resolvedPath);
+        } catch {
+          throw new Error(`Could not read input image: ${resolvedPath}`);
+        }
+        contentParts.push({ inlineData: { mimeType, data: imageData.toString("base64") } });
+      }
+    }
+    contentParts.push({ text: prompt });
 
     const responseModalities = mode === "image" ? ["IMAGE"] : ["TEXT", "IMAGE"];
 
@@ -137,7 +179,7 @@ server.registerTool(
     try {
       response = await ai.models.generateContent({
         model: MODELS[model],
-        contents: prompt,
+        contents: contentParts.length === 1 ? prompt : contentParts,
         config,
       });
     } catch (err) {
