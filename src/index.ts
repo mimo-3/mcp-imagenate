@@ -100,11 +100,11 @@ const GenerateImageSchema = {
         "and all paths are sandboxed within it.",
     ),
 
-  thinkingLevel: z
-    .enum(["minimal", "high"])
-    .default("minimal")
+  thinking: z
+    .enum(["none", "auto"])
+    .default("auto")
     .describe(
-      "Depth of model reasoning before generation. minimal is faster; high produces more refined output at higher cost"
+      "Controls model thinking before generation. none disables thinking (thinkingBudget=0); auto lets the model decide (thinkingBudget=-1)"
     ),
 
   inputImages: z
@@ -158,7 +158,7 @@ server.registerTool(
     mode,
     numberOfImages,
     outputDir,
-    thinkingLevel,
+    thinking,
     inputImages,
   }) => {
     const resolvedDir = resolveOutputDir(outputDir);
@@ -202,7 +202,7 @@ server.registerTool(
         numberOfImages,
       },
       thinkingConfig: {
-        thinkingLevel,
+        thinkingBudget: thinking === "none" ? 0 : -1,
       },
     };
 
