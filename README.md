@@ -66,15 +66,16 @@ Add to your `claude_desktop_config.json`:
 
 ### Parameters
 
-| Parameter        | Type                                     | Default           | Description                                  |
-| ---------------- | ---------------------------------------- | ----------------- | -------------------------------------------- |
-| `prompt`         | `string` (1–10,000 chars)                | —                 | Text prompt describing the image             |
-| `model`          | `"nano-banana-2"` \| `"nano-banana-pro"` | `"nano-banana-2"` | Model to use                                 |
-| `resolution`     | `"1K"` \| `"2K"` \| `"4K"`              | `"1K"`            | Output image resolution                      |
-| `aspectRatio`    | see below                                | `"1:1"`           | Aspect ratio of the image                    |
-| `mode`           | `"image"` \| `"image_and_text"`          | `"image"`         | Return image only, or image with description |
-| `numberOfImages` | `1`–`4`                                  | `1`               | Number of images to generate                 |
-| `outputDir`      | `string`                                 | `"."`             | Directory where images will be saved         |
+| Parameter      | Type                                                   | Default           | Description                                                                   |
+| -------------- | ------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------------- |
+| `prompt`       | `string` (1–10,000 chars)                              | —                 | Text prompt describing the image                                              |
+| `model`        | `"nano-banana-2"` \| `"nano-banana-pro"`               | `"nano-banana-2"` | Model to use                                                                  |
+| `resolution`   | `"1K"` \| `"2K"` \| `"4K"`                            | `"1K"`            | Output image resolution                                                       |
+| `aspectRatio`  | see below                                              | `"1:1"`           | Aspect ratio of the image                                                     |
+| `mode`         | `"image"` \| `"image_and_text"`                        | `"image"`         | Return image only, or image with description                                  |
+| `thinking`     | `"none"` \| `"auto"`                                   | `"auto"`          | `none` disables thinking; `auto` lets the model decide its reasoning budget   |
+| `outputDir`    | `string`                                               | `"."`             | Directory where images will be saved                                          |
+| `inputImages`  | `string[]`                                             | —                 | File paths of images to send alongside the prompt (PNG/JPEG/WEBP/GIF)        |
 
 #### Supported aspect ratios
 
@@ -91,8 +92,7 @@ Returns a JSON object:
   "settings": {
     "resolution": "1K",
     "aspectRatio": "9:16",
-    "mode": "image",
-    "numberOfImages": 1
+    "mode": "image"
   },
   "description": "..."
 }
