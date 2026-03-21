@@ -1,5 +1,5 @@
 {
-  "name": "nano-banana-mcp",
+  "name": "mcp-imagenate",
   "version": "0.1.0",
   "description": "MCP server for image generation using Nano Banana (Google Gemini) models via Google AI Studio",
   "keywords": [
@@ -14,7 +14,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "nano-banana-mcp": "dist/index.js"
+    "mcp-imagenate": "dist/index.js"
   },
   "files": [
     "dist"
