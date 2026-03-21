@@ -83,14 +83,6 @@ const GenerateImageSchema = {
       "Response mode. image returns only the image; image_and_text also returns a description",
     ),
 
-  numberOfImages: z
-    .number()
-    .int()
-    .min(1)
-    .max(4)
-    .default(1)
-    .describe("Number of images to generate (1–4)"),
-
   outputDir: z
     .string()
     .default(".")
@@ -134,6 +126,12 @@ function resolveOutputDir(outputDir: string): string {
   return path.resolve(outputDir);
 }
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type ContentPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
 // ─── Server ──────────────────────────────────────────────────────────────────
 
 const server = new McpServer({
@@ -156,7 +154,6 @@ server.registerTool(
     resolution,
     aspectRatio,
     mode,
-    numberOfImages,
     outputDir,
     thinking,
     inputImages,
@@ -164,10 +161,7 @@ server.registerTool(
     const resolvedDir = resolveOutputDir(outputDir);
 
     // Build contents: [image parts..., text prompt]
-    type Part =
-      | { text: string }
-      | { inlineData: { mimeType: string; data: string } };
-    const contentParts: Part[] = [];
+    const contentParts: ContentPart[] = [];
 
     if (inputImages && inputImages.length > 0) {
       for (const imagePath of inputImages) {
@@ -199,7 +193,6 @@ server.registerTool(
       imageConfig: {
         imageSize: resolution,
         aspectRatio,
-        numberOfImages,
       },
       thinkingConfig: {
         thinkingBudget: thinking === "none" ? 0 : -1,
@@ -248,7 +241,7 @@ server.registerTool(
     const result: Record<string, unknown> = {
       model: MODELS[model],
       savedFiles,
-      settings: { resolution, aspectRatio, mode, numberOfImages },
+      settings: { resolution, aspectRatio, mode },
     };
     if (textContent) {
       result.description = textContent.trim();
