@@ -135,7 +135,7 @@ type ContentPart =
 // ─── Server ──────────────────────────────────────────────────────────────────
 
 const server = new McpServer({
-  name: "nano-banana-mcp",
+  name: "mcp-imagenate",
   version: "0.1.0",
 });
 
