@@ -11,7 +11,8 @@
     "nano-banana",
     "google-ai"
   ],
-  "author": "Rym-0",
+  "author": "mimo-3",
+  "mcpName": "io.github.mimo-3/mcp-imagenate",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
