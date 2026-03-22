@@ -1,17 +1,12 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
-
-// ─── Model IDs ───────────────────────────────────────────────────────────────
-
-const MODELS = {
-  "nano-banana-2": "gemini-3.1-flash-image-preview",
-  "nano-banana-pro": "gemini-3-pro-image-preview",
-} as const;
+import * as crypto from "crypto";
+import { initRegistry, resolveModel, getDefaultModel } from "./providers/registry.js";
+import { resolveOutputDir, resolveInputImagePath, MAX_INPUT_IMAGE_SIZE } from "./sandbox.js";
 
 // ─── MIME / extension allowlists ─────────────────────────────────────────────
 
@@ -30,23 +25,16 @@ const EXT_TO_MIME: Record<string, string> = {
   gif: "image/gif",
 };
 
-// ─── Environment (validated at startup) ──────────────────────────────────────
+// ─── Environment ─────────────────────────────────────────────────────────────
 
-const apiKey = process.env.NANO_BANANA_API_KEY ?? process.env.GEMINI_API_KEY;
-if (!apiKey) {
-  console.error(
-    "Error: NANO_BANANA_API_KEY or GEMINI_API_KEY environment variable is not set",
-  );
-  process.exit(1);
-}
-
-// When set, all outputDir values are resolved relative to this base and
-// sandboxed within it. Recommended for production deployments.
 const outputBaseDir = process.env.NANO_BANANA_OUTPUT_DIR
   ? path.resolve(process.env.NANO_BANANA_OUTPUT_DIR)
   : null;
 
-const ai = new GoogleGenAI({ apiKey });
+// ─── Registry (probes API keys, exits if none set) ───────────────────────────
+
+const availableModels = initRegistry();
+const defaultModel = getDefaultModel();
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -58,10 +46,10 @@ const GenerateImageSchema = {
     .describe("Text prompt describing the image to generate"),
 
   model: z
-    .enum(["nano-banana-2", "nano-banana-pro"])
-    .default("nano-banana-2")
+    .enum(availableModels as [string, ...string[]])
+    .default(defaultModel)
     .describe(
-      "Model to use. nano-banana-2 is faster; nano-banana-pro is higher quality",
+      "Model to use. Available models depend on configured API keys",
     ),
 
   resolution: z
@@ -80,7 +68,7 @@ const GenerateImageSchema = {
     .enum(["image", "image_and_text"])
     .default("image")
     .describe(
-      "Response mode. image returns only the image; image_and_text also returns a description",
+      "Response mode. image returns only the image; image_and_text also returns a description (Google models only)",
     ),
 
   outputDir: z
@@ -96,7 +84,7 @@ const GenerateImageSchema = {
     .enum(["none", "auto"])
     .default("auto")
     .describe(
-      "Controls model thinking before generation. none disables thinking (thinkingBudget=0); auto lets the model decide (thinkingBudget=-1)"
+      "Controls model thinking before generation (Google models only). none disables thinking; auto lets the model decide",
     ),
 
   inputImages: z
@@ -104,39 +92,15 @@ const GenerateImageSchema = {
     .optional()
     .describe(
       "File paths of images to include as input alongside the prompt (supports PNG, JPEG, WEBP, GIF). " +
-        "Useful for image editing, style reference, or multi-image instructions."
+        "Currently supported by Google models only.",
     ),
 };
-
-// ─── Path sandbox helper ──────────────────────────────────────────────────────
-
-function resolveOutputDir(outputDir: string): string {
-  if (outputBaseDir !== null) {
-    const resolved = path.resolve(outputBaseDir, outputDir);
-    const isInside =
-      resolved === outputBaseDir ||
-      resolved.startsWith(outputBaseDir + path.sep);
-    if (!isInside) {
-      throw new Error(
-        `outputDir is outside the allowed base directory (NANO_BANANA_OUTPUT_DIR=${outputBaseDir})`,
-      );
-    }
-    return resolved;
-  }
-  return path.resolve(outputDir);
-}
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type ContentPart =
-  | { text: string }
-  | { inlineData: { mimeType: string; data: string } };
 
 // ─── Server ──────────────────────────────────────────────────────────────────
 
 const server = new McpServer({
   name: "mcp-imagenate",
-  version: "0.1.0",
+  version: "0.1.3",
 });
 
 server.registerTool(
@@ -144,7 +108,7 @@ server.registerTool(
   {
     title: "Generate Image",
     description:
-      "Generate images using Nano Banana models (Google Gemini image generation via AI Studio). " +
+      "Generate images using multiple providers (Google Gemini, OpenAI, BFL FLUX). " +
       "Images are saved to disk and the file paths are returned.",
     inputSchema: GenerateImageSchema,
   },
@@ -158,14 +122,15 @@ server.registerTool(
     thinking,
     inputImages,
   }) => {
-    const resolvedDir = resolveOutputDir(outputDir);
+    const resolvedDir = resolveOutputDir(outputDir, outputBaseDir);
 
-    // Build contents: [image parts..., text prompt]
-    const contentParts: ContentPart[] = [];
+    // Read input images into Buffers
+    const imageBuffers: Buffer[] = [];
+    const imageMimeTypes: string[] = [];
 
     if (inputImages && inputImages.length > 0) {
       for (const imagePath of inputImages) {
-        const resolvedPath = path.resolve(imagePath);
+        const resolvedPath = resolveInputImagePath(imagePath, outputBaseDir);
         const ext = path.extname(resolvedPath).toLowerCase().slice(1);
         const mimeType = EXT_TO_MIME[ext];
         if (!mimeType) {
@@ -173,93 +138,71 @@ server.registerTool(
             `Unsupported input image format: .${ext}. Supported: png, jpg, jpeg, webp, gif`,
           );
         }
+
+        const stat = await fs.promises.stat(resolvedPath);
+        if (!stat.isFile()) {
+          throw new Error(`Input image path is not a file: ${imagePath}`);
+        }
+        if (stat.size > MAX_INPUT_IMAGE_SIZE) {
+          throw new Error(
+            `Input image exceeds 20 MB limit: ${imagePath} (${(stat.size / 1024 / 1024).toFixed(1)} MB)`,
+          );
+        }
+
         let imageData: Buffer;
         try {
           imageData = await fs.promises.readFile(resolvedPath);
         } catch {
-          throw new Error(`Could not read input image: ${resolvedPath}`);
+          throw new Error(`Could not read input image: ${imagePath}`);
         }
-        contentParts.push({
-          inlineData: { mimeType, data: imageData.toString("base64") },
-        });
-      }
-    }
-    contentParts.push({ text: prompt });
-
-    const responseModalities = mode === "image" ? ["IMAGE"] : ["TEXT", "IMAGE"];
-
-    const config: Record<string, unknown> = {
-      responseModalities,
-      imageConfig: {
-        imageSize: resolution,
-        aspectRatio,
-      },
-      thinkingConfig: {
-        thinkingBudget: thinking === "none" ? 0 : -1,
-      },
-    };
-
-    let response;
-    try {
-      response = await ai.models.generateContent({
-        model: MODELS[model],
-        contents: contentParts.length === 1 ? prompt : contentParts,
-        config,
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      // Some models don't support thinkingBudget — retry without thinkingConfig
-      if (message.includes("thinking")) {
-        const { thinkingConfig: _, ...configWithoutThinking } = config;
-        response = await ai.models.generateContent({
-          model: MODELS[model],
-          contents: contentParts.length === 1 ? prompt : contentParts,
-          config: configWithoutThinking,
-        });
-      } else {
-        throw new Error(`Image generation failed: ${message}`);
+        imageBuffers.push(imageData);
+        imageMimeTypes.push(mimeType);
       }
     }
 
-    const parts = response.candidates?.[0]?.content?.parts ?? [];
+    // Resolve model → provider
+    const { modelId, generate } = resolveModel(model);
 
+    // Call provider
+    const result = await generate({
+      prompt,
+      modelId,
+      resolution,
+      aspectRatio,
+      mode,
+      thinking,
+      inputImages: imageBuffers.length > 0 ? imageBuffers : undefined,
+      inputImageMimeTypes:
+        imageMimeTypes.length > 0 ? imageMimeTypes : undefined,
+    });
+
+    // Save images to disk
     await fs.promises.mkdir(resolvedDir, { recursive: true });
 
     const savedFiles: string[] = [];
-    let textContent = "";
+    const ext = MIME_TO_EXT[result.mimeType] ?? "png";
 
-    for (const part of parts) {
-      if (part.inlineData?.data) {
-        const mimeType = part.inlineData.mimeType ?? "image/png";
-        const ext = MIME_TO_EXT[mimeType] ?? "png";
-        const filename = `${Date.now()}-${savedFiles.length + 1}.${ext}`;
-        const filePath = path.join(resolvedDir, filename);
-        await fs.promises.writeFile(
-          filePath,
-          Buffer.from(part.inlineData.data, "base64"),
-        );
-        savedFiles.push(filePath);
-      } else if (typeof part.text === "string" && part.text.trim()) {
-        textContent += part.text;
-      }
+    for (const imageBuffer of result.images) {
+      const uid = crypto.randomUUID().slice(0, 8);
+      const filename = `${Date.now()}-${uid}.${ext}`;
+      const filePath = path.join(resolvedDir, filename);
+      await fs.promises.writeFile(filePath, imageBuffer);
+      savedFiles.push(filePath);
     }
 
-    if (savedFiles.length === 0) {
-      throw new Error("No images were returned by the model");
-    }
-
-    const result: Record<string, unknown> = {
-      model: MODELS[model],
+    // Build response
+    const response: Record<string, unknown> = {
+      model: modelId,
       savedFiles,
       settings: { resolution, aspectRatio, mode },
     };
-    if (textContent) {
-      result.description = textContent.trim();
+    if (result.description) {
+      response.description = result.description;
     }
 
     return {
       content: [
-        { type: "text" as const, text: JSON.stringify(result, null, 2) },
+        { type: "text" as const, text: JSON.stringify(response, null, 2) },
       ],
     };
   },
