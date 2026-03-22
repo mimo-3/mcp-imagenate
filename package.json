@@ -19,14 +19,14 @@
     "mcp-imagenate": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/tests"
   ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
-    "test": "node --test dist/tests/*.test.js",
-    "pretest": "npm run build",
+    "test": "tsc -p tsconfig.test.json && node --test dist-test/tests/*.test.js",
     "prepare": "npm run build"
   },
   "dependencies": {
