@@ -103,7 +103,7 @@ Add to your `claude_desktop_config.json`:
 
 | Parameter      | Type                                                   | Default           | Description                                                                   |
 | -------------- | ------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------------- |
-| `prompt`       | `string` (1-10,000 chars)                              | -                 | Text prompt describing the image                                              |
+| `prompt`       | `string` (1-32,000 chars)                              | -                 | Text prompt describing the image                                              |
 | `model`        | see Models above                                       | `"nano-banana-2"` | Model to use (available models depend on configured API keys)                 |
 | `resolution`   | `"1K"` \| `"2K"` \| `"4K"`                            | `"1K"`            | Output image resolution                                                       |
 | `aspectRatio`  | see below                                              | `"1:1"`           | Aspect ratio of the image                                                     |

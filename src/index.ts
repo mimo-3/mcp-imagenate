@@ -42,7 +42,7 @@ const GenerateImageSchema = {
   prompt: z
     .string()
     .min(1)
-    .max(10_000)
+    .max(32_000)
     .describe("Text prompt describing the image to generate"),
 
   model: z
