@@ -1,5 +1,9 @@
 # mcp-imagenate
 
+<p align="center">
+  <img src="imagenerate-cat.png" alt="mcp-imagenate" width="400">
+</p>
+
 An MCP server for image generation using multiple providers: **Google Gemini**, **OpenAI (gpt-image)**, and **BFL FLUX**.
 
 ## Providers & Models
