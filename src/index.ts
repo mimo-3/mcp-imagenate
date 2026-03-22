@@ -100,7 +100,7 @@ const GenerateImageSchema = {
 
 const server = new McpServer({
   name: "mcp-imagenate",
-  version: "0.1.3",
+  version: "0.1.4",
 });
 
 server.registerTool(
