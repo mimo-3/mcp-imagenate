@@ -4,3 +4,4 @@ dist-test/
 test-output/
 *.env
 .env*
+.mcpregistry_*
