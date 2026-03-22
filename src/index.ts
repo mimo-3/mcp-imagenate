@@ -207,8 +207,18 @@ server.registerTool(
         config,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      throw new Error(`Image generation failed: ${message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      // Some models don't support thinkingBudget — retry without thinkingConfig
+      if (message.includes("thinking")) {
+        const { thinkingConfig: _, ...configWithoutThinking } = config;
+        response = await ai.models.generateContent({
+          model: MODELS[model],
+          contents: contentParts.length === 1 ? prompt : contentParts,
+          config: configWithoutThinking,
+        });
+      } else {
+        throw new Error(`Image generation failed: ${message}`);
+      }
     }
 
     const parts = response.candidates?.[0]?.content?.parts ?? [];
