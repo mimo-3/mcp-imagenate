@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mimo-3/mcp-imagenate",
+  "title": "MCP Imagenate",
+  "description": "MCP server for image generation using multiple providers (Google Gemini, OpenAI, BFL FLUX)",
+  "repository": {
+    "url": "https://github.com/mimo-3/mcp-imagenate",
+    "source": "github"
+  },
+  "version": "0.1.4",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mcp-imagenate",
+      "version": "0.1.4",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
