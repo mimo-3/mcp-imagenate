@@ -66,6 +66,11 @@ export function createFluxProvider(apiKey: string): ProviderRegistration {
     if (params.inputImages?.length) {
       throw new Error("FLUX models do not support input images");
     }
+    if (params.prompt.length > 3000) {
+      throw new Error(
+        `FLUX prompt exceeds 3,000 character limit (got ${params.prompt.length}). Shorten your prompt or use a Google/OpenAI model.`,
+      );
+    }
 
     const { width, height } = resolveWidthHeight(
       params.resolution,
