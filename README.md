@@ -1,4 +1,4 @@
-# nano-banana-mcp
+# mcp-imagenate
 
 An MCP server for image generation using **Nano Banana** (Google Gemini) models via Google AI Studio.
 
@@ -17,13 +17,13 @@ An MCP server for image generation using **Nano Banana** (Google Gemini) models 
 ## Installation
 
 ```bash
-npx nano-banana-mcp
+npx mcp-imagenate
 ```
 
 Or install globally:
 
 ```bash
-npm install -g nano-banana-mcp
+npm install -g mcp-imagenate
 ```
 
 ## Setup
@@ -41,9 +41,9 @@ Add to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "nano-banana-mcp": {
+    "mcp-imagenate": {
       "command": "npx",
-      "args": ["nano-banana-mcp"],
+      "args": ["mcp-imagenate"],
       "env": {
         "GEMINI_API_KEY": "your_api_key_here"
       }
