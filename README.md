@@ -1,7 +1,7 @@
 # mcp-imagenate
 
 <p align="center">
-  <img src="imagenerate-cat.png" alt="mcp-imagenate" width="400">
+  <img src="https://raw.githubusercontent.com/mimo-3/mcp-imagenate/main/imagenerate-cat.png" alt="mcp-imagenate" width="400">
 </p>
 
 An MCP server for image generation using multiple providers: **Google Gemini**, **OpenAI (gpt-image)**, and **BFL FLUX**.
