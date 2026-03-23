@@ -1,6 +1,6 @@
 {
   "name": "mcp-imagenate",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "MCP server for image generation using multiple providers (Google Gemini, OpenAI, BFL FLUX)",
   "keywords": [
     "mcp",
@@ -13,6 +13,10 @@
   ],
   "author": "mimo-3",
   "mcpName": "io.github.mimo-3/mcp-imagenate",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mimo-3/mcp-imagenate.git"
+  },
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
