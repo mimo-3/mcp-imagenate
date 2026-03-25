@@ -38,6 +38,28 @@ describe("resolveOutputDir", () => {
       /outside the allowed base directory/,
     );
   });
+
+  it("rejects symlink that escapes base dir", () => {
+    const tmpBase = fs.mkdtempSync(
+      path.join(os.tmpdir(), "mcp-imagenate-outdir-"),
+    );
+    const outsideDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "mcp-imagenate-outside-"),
+    );
+    const symlinkPath = path.join(tmpBase, "escape-link");
+    fs.symlinkSync(outsideDir, symlinkPath);
+
+    try {
+      assert.throws(
+        () => resolveOutputDir("escape-link", tmpBase),
+        /resolves outside the allowed base directory/,
+      );
+    } finally {
+      fs.unlinkSync(symlinkPath);
+      fs.rmSync(outsideDir, { recursive: true, force: true });
+      fs.rmSync(tmpBase, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("resolveInputImagePath", () => {
