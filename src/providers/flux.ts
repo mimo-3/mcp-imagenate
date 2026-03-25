@@ -1,5 +1,21 @@
 import type { GenerateParams, GenerateResult, ProviderRegistration } from "./types.js";
 
+const ALLOWED_BFL_ORIGIN = "https://api.bfl.ai";
+
+function assertBflUrl(url: string, label: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid ${label} URL received from FLUX API`);
+  }
+  if (parsed.origin !== ALLOWED_BFL_ORIGIN) {
+    throw new Error(
+      `${label} URL points to unexpected origin: ${parsed.origin} (expected ${ALLOWED_BFL_ORIGIN})`,
+    );
+  }
+}
+
 function resolveWidthHeight(
   resolution: string,
   aspectRatio: string,
@@ -103,8 +119,10 @@ export function createFluxProvider(apiKey: string): ProviderRegistration {
     const { polling_url } = (await submitResp.json()) as {
       polling_url: string;
     };
+    assertBflUrl(polling_url, "polling");
 
     const imageUrl = await pollForResult(polling_url, apiKey);
+    assertBflUrl(imageUrl, "image download");
 
     const imageResp = await fetch(imageUrl);
     if (!imageResp.ok) {
