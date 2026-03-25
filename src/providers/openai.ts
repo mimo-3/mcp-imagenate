@@ -62,7 +62,6 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
       n: 1,
       size: size as "1024x1024",
       quality,
-      response_format: "b64_json",
     });
 
     const images = (result.data ?? [])

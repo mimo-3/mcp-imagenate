@@ -1,6 +1,9 @@
 import type { GenerateParams, GenerateResult, ProviderRegistration } from "./types.js";
 
-const ALLOWED_BFL_ORIGIN = "https://api.bfl.ai";
+const ALLOWED_HOST_PATTERNS = [
+  (h: string) => h === "api.bfl.ai" || h.endsWith(".bfl.ai"),
+  (h: string) => h.endsWith(".blob.core.windows.net") && h.startsWith("bfl"),
+];
 
 function assertBflUrl(url: string, label: string): void {
   let parsed: URL;
@@ -9,9 +12,12 @@ function assertBflUrl(url: string, label: string): void {
   } catch {
     throw new Error(`Invalid ${label} URL received from FLUX API`);
   }
-  if (parsed.origin !== ALLOWED_BFL_ORIGIN) {
+  if (
+    parsed.protocol !== "https:" ||
+    !ALLOWED_HOST_PATTERNS.some((p) => p(parsed.hostname))
+  ) {
     throw new Error(
-      `${label} URL points to unexpected origin: ${parsed.origin} (expected ${ALLOWED_BFL_ORIGIN})`,
+      `${label} URL points to unexpected origin: ${parsed.origin}`,
     );
   }
 }
