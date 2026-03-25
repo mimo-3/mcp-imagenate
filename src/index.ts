@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
 import { initRegistry, resolveModel, getDefaultModel } from "./providers/registry.js";
-import { resolveOutputDir, resolveInputImagePath, MAX_INPUT_IMAGE_SIZE } from "./sandbox.js";
+import { resolveOutputDir, resolveInputImagePath, getDefaultOutputBaseDir, MAX_INPUT_IMAGE_SIZE } from "./sandbox.js";
 
 // ─── MIME / extension allowlists ─────────────────────────────────────────────
 
@@ -29,7 +29,13 @@ const EXT_TO_MIME: Record<string, string> = {
 
 const outputBaseDir = process.env.NANO_BANANA_OUTPUT_DIR
   ? path.resolve(process.env.NANO_BANANA_OUTPUT_DIR)
-  : null;
+  : getDefaultOutputBaseDir();
+
+if (!process.env.NANO_BANANA_OUTPUT_DIR) {
+  console.error(
+    `Warning: NANO_BANANA_OUTPUT_DIR is not set. Defaulting to ${outputBaseDir}`,
+  );
+}
 
 // ─── Registry (probes API keys, exits if none set) ───────────────────────────
 
@@ -100,7 +106,7 @@ const GenerateImageSchema = {
 
 const server = new McpServer({
   name: "mcp-imagenate",
-  version: "0.1.6",
+  version: "0.1.8",
 });
 
 server.registerTool(
