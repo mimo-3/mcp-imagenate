@@ -12,10 +12,18 @@ export function createGoogleProvider(apiKey: string): ProviderRegistration {
     const contentParts: ContentPart[] = [];
 
     if (params.inputImages) {
+      if (
+        !params.inputImageMimeTypes ||
+        params.inputImageMimeTypes.length !== params.inputImages.length
+      ) {
+        throw new Error(
+          "inputImageMimeTypes must be provided and match inputImages length",
+        );
+      }
       for (let i = 0; i < params.inputImages.length; i++) {
         contentParts.push({
           inlineData: {
-            mimeType: params.inputImageMimeTypes![i],
+            mimeType: params.inputImageMimeTypes[i],
             data: params.inputImages[i].toString("base64"),
           },
         });
