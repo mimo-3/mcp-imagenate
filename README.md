@@ -17,9 +17,10 @@ An MCP server for image generation using multiple providers: **Google Gemini**, 
 
 ### OpenAI
 
-| Name              | Model ID          | Best for                       |
-| ----------------- | ----------------- | ------------------------------ |
-| `gpt-image-1.5`   | `gpt-image-1.5`  | High quality, prompt adherence |
+| Name            | Model ID        | Best for                           |
+| --------------- | --------------- | ---------------------------------- |
+| `gpt-image-1.5` | `gpt-image-1.5` | High quality, prompt adherence     |
+| `gpt-image-2`   | `gpt-image-2`   | Latest generation, improved detail |
 
 ### BFL FLUX
 
