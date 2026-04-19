@@ -49,7 +49,7 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
   const generate = async (params: GenerateParams): Promise<GenerateResult> => {
     if (params.inputImages?.length) {
       throw new Error(
-        "gpt-image-1.5 does not support input images. Use the prompt to describe the desired image.",
+        `${params.modelId} does not support input images. Use the prompt to describe the desired image.`,
       );
     }
 
@@ -57,7 +57,7 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
     const quality = resolveQuality(params.resolution);
 
     const result = await client.images.generate({
-      model: "gpt-image-1.5",
+      model: params.modelId,
       prompt: params.prompt,
       n: 1,
       size: size as "1024x1024",
@@ -69,14 +69,17 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
       .map((d) => Buffer.from(d.b64_json!, "base64"));
 
     if (images.length === 0) {
-      throw new Error("No images were returned by gpt-image-1.5");
+      throw new Error(`No images were returned by ${params.modelId}`);
     }
 
     return { images, mimeType: "image/png" };
   };
 
   return {
-    models: { "gpt-image-1.5": "gpt-image-1.5" },
+    models: {
+      "gpt-image-1.5": "gpt-image-1.5",
+      "gpt-image-2": "gpt-image-2",
+    },
     generate,
   };
 }
