@@ -18,10 +18,7 @@ describe("provider creation", () => {
   it("createOpenAIProvider returns expected model names", async () => {
     const { createOpenAIProvider } = await import("../src/providers/openai.js");
     const provider = createOpenAIProvider("test-key");
-    assert.deepEqual(Object.keys(provider.models), [
-      "gpt-image-1.5",
-      "gpt-image-2",
-    ]);
+    assert.deepEqual(Object.keys(provider.models), ["gpt-image-2"]);
     assert.equal(typeof provider.generate, "function");
   });
 
