@@ -98,7 +98,7 @@ const GenerateImageSchema = {
     .optional()
     .describe(
       "File paths of images to include as input alongside the prompt (supports PNG, JPEG, WEBP, GIF). " +
-        "Currently supported by Google models only.",
+        "Supported by Google models and OpenAI gpt-image models (uses the images.edit endpoint).",
     ),
 };
 
