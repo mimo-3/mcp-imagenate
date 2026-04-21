@@ -17,9 +17,9 @@ An MCP server for image generation using multiple providers: **Google Gemini**, 
 
 ### OpenAI
 
-| Name              | Model ID          | Best for                       |
-| ----------------- | ----------------- | ------------------------------ |
-| `gpt-image-1.5`   | `gpt-image-1.5`  | High quality, prompt adherence |
+| Name          | Model ID      | Best for                           |
+| ------------- | ------------- | ---------------------------------- |
+| `gpt-image-2` | `gpt-image-2` | Latest generation, improved detail |
 
 ### BFL FLUX
 
@@ -110,7 +110,7 @@ Add to your `claude_desktop_config.json`:
 | `mode`         | `"image"` \| `"image_and_text"`                        | `"image"`         | Return image only, or image with description (Google models only)             |
 | `thinking`     | `"none"` \| `"auto"`                                   | `"auto"`          | Controls model thinking (Google models only)                                  |
 | `outputDir`    | `string`                                               | `"."`             | Directory where images will be saved                                          |
-| `inputImages`  | `string[]`                                             | -                 | File paths of images to send alongside the prompt (Google models only)        |
+| `inputImages`  | `string[]`                                             | -                 | File paths of images to send alongside the prompt (Google models, and OpenAI gpt-image models via the images.edit endpoint) |
 
 #### Supported aspect ratios
 
