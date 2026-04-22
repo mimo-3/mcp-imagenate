@@ -15,7 +15,7 @@
   "mcpName": "io.github.mimo-3/mcp-imagenate",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mimo-3/mcp-imagenate.git"
+    "url": "git+https://github.com/mimo-3/mcp-imagenate.git"
   },
   "license": "MIT",
   "type": "module",
