@@ -32,6 +32,7 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "tsc -p tsconfig.test.json && node --test dist-test/tests/*.test.js",
+    "verify": "npm run build && npm test",
     "prepare": "npm run build"
   },
   "dependencies": {
