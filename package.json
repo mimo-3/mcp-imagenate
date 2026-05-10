@@ -1,6 +1,6 @@
 {
   "name": "mcp-imagenate",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server for image generation using multiple providers (Google Gemini, OpenAI, BFL FLUX)",
   "keywords": [
     "mcp",
@@ -32,6 +32,7 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "tsc -p tsconfig.test.json && node --test dist-test/tests/*.test.js",
+    "verify": "npm run build && npm test",
     "prepare": "npm run build"
   },
   "dependencies": {
