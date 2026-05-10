@@ -62,6 +62,6 @@ export function resolveModel(friendlyName: string): ResolvedModel {
 }
 
 export function getDefaultModel(): string {
-  if (registry.has("nano-banana-2")) return "nano-banana-2";
+  if (registry.has("gpt-image-2")) return "gpt-image-2";
   return registry.keys().next().value!;
 }

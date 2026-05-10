@@ -104,7 +104,7 @@ Add to your `claude_desktop_config.json`:
 | Parameter      | Type                                                   | Default           | Description                                                                   |
 | -------------- | ------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------------- |
 | `prompt`       | `string` (1-32,000 chars)                              | -                 | Text prompt describing the image                                              |
-| `model`        | see Models above                                       | `"nano-banana-2"` | Model to use (available models depend on configured API keys)                 |
+| `model`        | see Models above                                       | `"gpt-image-2"`   | Model to use (available models depend on configured API keys)                 |
 | `resolution`   | `"1K"` \| `"2K"` \| `"4K"`                            | `"1K"`            | Output image resolution                                                       |
 | `aspectRatio`  | see below                                              | `"1:1"`           | Aspect ratio of the image                                                     |
 | `mode`         | `"image"` \| `"image_and_text"`                        | `"image"`         | Return image only, or image with description (Google models only)             |
