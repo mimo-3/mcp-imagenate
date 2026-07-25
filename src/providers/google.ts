@@ -62,7 +62,10 @@ export function createGoogleProvider(apiKey: string): ProviderRegistration {
           config: configWithoutThinking,
         });
       } else {
-        throw new Error(`Image generation failed: ${message}`);
+        // Name the provider rather than restating "image generation failed":
+        // every host already frames it that way, so a generic prefix here just
+        // shows up twice in the message the user reads.
+        throw new Error(`Gemini request failed: ${message}`);
       }
     }
 

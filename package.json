@@ -1,7 +1,7 @@
 {
   "name": "mcp-imagenate",
-  "version": "0.2.1",
-  "description": "MCP server for image generation using multiple providers (Google Gemini, OpenAI, BFL FLUX)",
+  "version": "0.3.1",
+  "description": "MCP server and embeddable library for image generation using multiple providers (Google Gemini, OpenAI, BFL FLUX)",
   "keywords": [
     "mcp",
     "image-generation",
@@ -19,7 +19,18 @@
   },
   "license": "MIT",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/lib.js",
+  "types": "dist/lib.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib.d.ts",
+      "import": "./dist/lib.js"
+    },
+    "./server": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "bin": {
     "mcp-imagenate": "dist/index.js"
   },
