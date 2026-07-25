@@ -1,8 +1,7 @@
-import { describe, it, beforeEach } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-// Registry uses module-level state, so we test the logic indirectly
-// by checking the provider creation functions don't throw
+import { createRegistry, keysFromEnv } from "../src/providers/registry.js";
 
 describe("provider creation", () => {
   it("createGoogleProvider returns expected model names", async () => {
@@ -34,13 +33,84 @@ describe("provider creation", () => {
   });
 });
 
-describe("flux resolveWidthHeight", () => {
-  it("respects 4MP limit for 4K resolution", async () => {
-    // We can't import the private function directly, but we can verify
-    // through the provider that extreme resolutions don't break
-    const { createFluxProvider } = await import("../src/providers/flux.js");
-    const provider = createFluxProvider("test-key");
-    // Just verify the provider is created successfully
-    assert.ok(provider);
+describe("createRegistry", () => {
+  it("registers only the providers whose key is supplied", () => {
+    const registry = createRegistry({ openai: "k" });
+    assert.deepEqual(registry.models, ["gpt-image-2"]);
+  });
+
+  it("returns an empty registry instead of exiting when no keys are given", () => {
+    const registry = createRegistry({});
+    assert.deepEqual(registry.models, []);
+    assert.equal(registry.defaultModel, undefined);
+  });
+
+  it("explains the missing-key case when resolving against an empty registry", () => {
+    const registry = createRegistry({});
+    assert.throws(
+      () => registry.resolve("gpt-image-2"),
+      /no provider API key is configured/,
+    );
+  });
+
+  it("lists the available models when resolving an unknown name", () => {
+    const registry = createRegistry({ openai: "k" });
+    assert.throws(
+      () => registry.resolve("nano-banana-2"),
+      /Available: gpt-image-2/,
+    );
+  });
+
+  it("resolves a friendly name to its provider model id", () => {
+    const registry = createRegistry({ google: "k" });
+    assert.equal(
+      registry.resolve("nano-banana-pro").modelId,
+      "gemini-3-pro-image-preview",
+    );
+  });
+
+  it("keeps registries independent of one another", () => {
+    const openaiOnly = createRegistry({ openai: "k" });
+    createRegistry({ google: "k", flux: "k" });
+    assert.deepEqual(openaiOnly.models, ["gpt-image-2"]);
+  });
+
+  it("prefers gpt-image-2 as the default when several providers are configured", () => {
+    const registry = createRegistry({ google: "k", openai: "k", flux: "k" });
+    assert.equal(registry.defaultModel, "gpt-image-2");
+  });
+
+  it("falls back to the preference order when OpenAI is absent", () => {
+    const registry = createRegistry({ google: "k", flux: "k" });
+    assert.equal(registry.defaultModel, "nano-banana-pro");
+  });
+
+  it("falls back to registration order outside the preference list", () => {
+    const registry = createRegistry({ flux: "k" });
+    assert.equal(registry.defaultModel, "flux-2-klein");
+  });
+});
+
+describe("keysFromEnv", () => {
+  it("reads the documented variables", () => {
+    const keys = keysFromEnv({
+      NANO_BANANA_API_KEY: "g",
+      OPENAI_API_KEY: "o",
+      BFL_API_KEY: "f",
+    } as NodeJS.ProcessEnv);
+    assert.deepEqual(keys, { google: "g", openai: "o", flux: "f" });
+  });
+
+  it("prefers the provider-specific alias over the generic one", () => {
+    const keys = keysFromEnv({
+      NANO_BANANA_API_KEY: "specific",
+      GEMINI_API_KEY: "generic",
+    } as NodeJS.ProcessEnv);
+    assert.equal(keys.google, "specific");
+  });
+
+  it("omits providers with no key rather than setting undefined", () => {
+    const keys = keysFromEnv({} as NodeJS.ProcessEnv);
+    assert.deepEqual(keys, {});
   });
 });

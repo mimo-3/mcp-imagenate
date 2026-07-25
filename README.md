@@ -135,11 +135,50 @@ Returns a JSON object:
 
 > `description` is only present when `mode` is `"image_and_text"`.
 
+## Use as a library
+
+Besides the standalone MCP server, this package can be embedded in another host —
+an app, or another MCP server that wants to expose image generation as its own tool.
+
+```ts
+import { createRegistry, generateImageToDisk } from "mcp-imagenate";
+
+// Keys are passed in explicitly; nothing here reads process.env.
+const registry = createRegistry({ openai: myOpenAIKey, google: myGoogleKey });
+
+if (registry.models.length === 0) {
+  throw new Error("No image provider is configured");
+}
+
+const outcome = await generateImageToDisk({
+  registry,
+  prompt: "a calico cat asleep on a warm keyboard",
+  model: registry.defaultModel!,
+  aspectRatio: "16:9",
+  outputDir: "/somewhere/to/write",
+  // outputBaseDir defaults to null, meaning no path sandboxing. Set it to a
+  // directory to confine both output and input paths within that directory.
+});
+
+console.log(outcome.savedFiles);
+```
+
+The library entry point never reads `process.env`, writes to stdio, or exits the
+process. To read keys from the conventional environment variables anyway, use the
+`keysFromEnv()` helper. The standalone server is available at `mcp-imagenate/server`.
+
+| Export | Purpose |
+| --- | --- |
+| `createRegistry(keys)` | Build a registry of the models available for the given keys |
+| `keysFromEnv(env?)` | Read provider keys from environment variables |
+| `generateImageToDisk(options)` | Generate images and write them to disk |
+| `resolveOutputDir` / `resolveInputImagePath` | Path sandboxing helpers (opt-in) |
+
 ## Security
 
-- **Path sandboxing**: When `NANO_BANANA_OUTPUT_DIR` is set, both output and input image paths are sandboxed within this directory. Symlinks that resolve outside the sandbox are rejected.
+- **Path sandboxing**: When `NANO_BANANA_OUTPUT_DIR` is set, both output and input image paths are sandboxed within this directory. Symlinks that resolve outside the sandbox are rejected. For library embedders this is opt-in via `outputBaseDir`, since the host usually controls which paths reach the call.
 - **Input validation**: Input images are validated for format (PNG/JPEG/WEBP/GIF) and size (max 20 MB).
-- **API key validation**: The server exits immediately if no API keys are configured.
+- **API key validation**: The server exits immediately if no API keys are configured. The library reports this as an empty registry instead, leaving the decision to the host.
 
 ## License
 
