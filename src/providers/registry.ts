@@ -35,16 +35,26 @@ export interface ImageRegistry {
 
 /**
  * Which model to default to when several providers are configured. The first
- * entry that is actually available wins; anything not listed falls back to
- * registration order.
+ * entry that is actually available wins; otherwise the first registered model
+ * does.
+ *
+ * Deliberately just the one entry: picking a "better" fallback per provider
+ * would silently change cost and latency for anyone who omits `model`. A
+ * Google-only setup must keep defaulting to nano-banana-2, not to the slower
+ * and pricier nano-banana-pro.
  */
-const DEFAULT_MODEL_PREFERENCE = ["gpt-image-2", "nano-banana-pro", "nano-banana-2"];
+const DEFAULT_MODEL_PREFERENCE = ["gpt-image-2"];
 
-/** Read provider keys from an environment-like object (standalone server behaviour). */
+/**
+ * Read provider keys from an environment-like object (standalone server
+ * behaviour). The provider-specific variable wins over the generic one for
+ * every provider, as documented in the README — previously OpenAI alone had
+ * this the other way round.
+ */
 export function keysFromEnv(env: NodeJS.ProcessEnv = process.env): ProviderKeys {
   const keys: ProviderKeys = {};
   const google = env.NANO_BANANA_API_KEY ?? env.GEMINI_API_KEY;
-  const openai = env.OPENAI_API_KEY ?? env.GPT_IMAGE_API_KEY;
+  const openai = env.GPT_IMAGE_API_KEY ?? env.OPENAI_API_KEY;
   const flux = env.BFL_API_KEY;
   if (google) keys.google = google;
   if (openai) keys.openai = openai;
