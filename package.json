@@ -1,6 +1,6 @@
 {
   "name": "mcp-imagenate",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "MCP server and embeddable library for image generation using multiple providers (Google Gemini, OpenAI, BFL FLUX)",
   "keywords": [
     "mcp",
