@@ -80,9 +80,11 @@ describe("createRegistry", () => {
     assert.equal(registry.defaultModel, "gpt-image-2");
   });
 
-  it("falls back to the preference order when OpenAI is absent", () => {
+  it("keeps a Google-only setup defaulting to the cheaper nano-banana-2", () => {
+    // Changing this would silently move existing users onto a slower, pricier
+    // model whenever they omit `model`.
     const registry = createRegistry({ google: "k", flux: "k" });
-    assert.equal(registry.defaultModel, "nano-banana-pro");
+    assert.equal(registry.defaultModel, "nano-banana-2");
   });
 
   it("falls back to registration order outside the preference list", () => {
@@ -105,8 +107,19 @@ describe("keysFromEnv", () => {
     const keys = keysFromEnv({
       NANO_BANANA_API_KEY: "specific",
       GEMINI_API_KEY: "generic",
+      GPT_IMAGE_API_KEY: "specific",
+      OPENAI_API_KEY: "generic",
     } as NodeJS.ProcessEnv);
     assert.equal(keys.google, "specific");
+    assert.equal(keys.openai, "specific");
+  });
+
+  it("still falls back to the generic variable when only that is set", () => {
+    const keys = keysFromEnv({
+      GEMINI_API_KEY: "g",
+      OPENAI_API_KEY: "o",
+    } as NodeJS.ProcessEnv);
+    assert.deepEqual(keys, { google: "g", openai: "o" });
   });
 
   it("omits providers with no key rather than setting undefined", () => {

@@ -60,6 +60,45 @@ describe("resolveOutputDir", () => {
       fs.rmSync(tmpBase, { recursive: true, force: true });
     }
   });
+
+  it("rejects a not-yet-created dir reached through an escaping symlink", () => {
+    // The leaf does not exist, so plain realpath throws ENOENT and used to let
+    // this through — after which mkdir -p would follow the link out of bounds.
+    const tmpBase = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-imagenate-base-"));
+    const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-imagenate-outside-"));
+    const symlinkPath = path.join(tmpBase, "link");
+    fs.symlinkSync(outsideDir, symlinkPath);
+
+    try {
+      assert.throws(
+        () => resolveOutputDir("link/newdir", tmpBase),
+        /resolves outside the allowed base directory/,
+      );
+    } finally {
+      fs.unlinkSync(symlinkPath);
+      fs.rmSync(outsideDir, { recursive: true, force: true });
+      fs.rmSync(tmpBase, { recursive: true, force: true });
+    }
+  });
+
+  it("allows a not-yet-created dir that stays inside the base", () => {
+    const tmpBase = fs.mkdtempSync(path.join(os.tmpdir(), "mcp-imagenate-base-"));
+    try {
+      assert.equal(
+        resolveOutputDir("nested/newdir", tmpBase),
+        path.join(tmpBase, "nested/newdir"),
+      );
+    } finally {
+      fs.rmSync(tmpBase, { recursive: true, force: true });
+    }
+  });
+
+  it("accepts a relative base directory", () => {
+    // A relative base used to be compared against an absolute resolved path,
+    // so every path was rejected out of hand.
+    const result = resolveOutputDir("sub", "relative-base");
+    assert.equal(result, path.resolve("relative-base", "sub"));
+  });
 });
 
 describe("resolveInputImagePath", () => {
