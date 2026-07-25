@@ -2,28 +2,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import * as fs from "fs";
 import * as path from "path";
-import * as crypto from "crypto";
-import { initRegistry, resolveModel, getDefaultModel } from "./providers/registry.js";
-import { resolveOutputDir, resolveInputImagePath, getDefaultOutputBaseDir, MAX_INPUT_IMAGE_SIZE } from "./sandbox.js";
-
-// ─── MIME / extension allowlists ─────────────────────────────────────────────
-
-const MIME_TO_EXT: Record<string, string> = {
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
-
-const EXT_TO_MIME: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  webp: "image/webp",
-  gif: "image/gif",
-};
+import { ASPECT_RATIOS, generateImageToDisk, RESOLUTIONS } from "./generate.js";
+import { createRegistry, keysFromEnv } from "./providers/registry.js";
+import { getDefaultOutputBaseDir } from "./sandbox.js";
 
 // ─── Environment ─────────────────────────────────────────────────────────────
 
@@ -39,8 +21,18 @@ if (!process.env.NANO_BANANA_OUTPUT_DIR) {
 
 // ─── Registry (probes API keys, exits if none set) ───────────────────────────
 
-const availableModels = initRegistry();
-const defaultModel = getDefaultModel();
+const registry = createRegistry(keysFromEnv());
+
+if (registry.models.length === 0) {
+  console.error(
+    "Error: No API keys configured. Set at least one of: GEMINI_API_KEY / NANO_BANANA_API_KEY, OPENAI_API_KEY / GPT_IMAGE_API_KEY, BFL_API_KEY",
+  );
+  process.exit(1);
+}
+
+const availableModels = registry.models;
+// Non-null: guarded by the models.length check above.
+const defaultModel = registry.defaultModel!;
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -59,14 +51,14 @@ const GenerateImageSchema = {
     ),
 
   resolution: z
-    .enum(["1K", "2K", "4K"])
+    .enum(RESOLUTIONS as [string, ...string[]])
     .default("1K")
     .describe(
       "Output image resolution. Higher values may not be supported by all models",
     ),
 
   aspectRatio: z
-    .enum(["1:1", "2:3", "3:2", "3:4", "4:3", "9:16", "16:9", "21:9"])
+    .enum(ASPECT_RATIOS as [string, ...string[]])
     .default("1:1")
     .describe("Aspect ratio of the generated image"),
 
@@ -106,7 +98,7 @@ const GenerateImageSchema = {
 
 const server = new McpServer({
   name: "mcp-imagenate",
-  version: "0.2.1",
+  version: "0.3.0",
 });
 
 server.registerTool(
@@ -128,82 +120,26 @@ server.registerTool(
     thinking,
     inputImages,
   }) => {
-    const resolvedDir = resolveOutputDir(outputDir, outputBaseDir);
-
-    // Read input images into Buffers
-    const imageBuffers: Buffer[] = [];
-    const imageMimeTypes: string[] = [];
-
-    if (inputImages && inputImages.length > 0) {
-      for (const imagePath of inputImages) {
-        const resolvedPath = resolveInputImagePath(imagePath, outputBaseDir);
-        const ext = path.extname(resolvedPath).toLowerCase().slice(1);
-        const mimeType = EXT_TO_MIME[ext];
-        if (!mimeType) {
-          throw new Error(
-            `Unsupported input image format: .${ext}. Supported: png, jpg, jpeg, webp, gif`,
-          );
-        }
-
-        const stat = await fs.promises.stat(resolvedPath);
-        if (!stat.isFile()) {
-          throw new Error(`Input image path is not a file: ${imagePath}`);
-        }
-        if (stat.size > MAX_INPUT_IMAGE_SIZE) {
-          throw new Error(
-            `Input image exceeds 20 MB limit: ${imagePath} (${(stat.size / 1024 / 1024).toFixed(1)} MB)`,
-          );
-        }
-
-        let imageData: Buffer;
-        try {
-          imageData = await fs.promises.readFile(resolvedPath);
-        } catch {
-          throw new Error(`Could not read input image: ${imagePath}`);
-        }
-        imageBuffers.push(imageData);
-        imageMimeTypes.push(mimeType);
-      }
-    }
-
-    // Resolve model → provider
-    const { modelId, generate } = resolveModel(model);
-
-    // Call provider
-    const result = await generate({
+    const outcome = await generateImageToDisk({
+      registry,
       prompt,
-      modelId,
-      resolution,
-      aspectRatio,
+      model,
+      resolution: resolution as "1K" | "2K" | "4K",
+      aspectRatio: aspectRatio as "1:1",
       mode,
       thinking,
-      inputImages: imageBuffers.length > 0 ? imageBuffers : undefined,
-      inputImageMimeTypes:
-        imageMimeTypes.length > 0 ? imageMimeTypes : undefined,
+      outputDir,
+      outputBaseDir,
+      inputImages,
     });
 
-    // Save images to disk
-    await fs.promises.mkdir(resolvedDir, { recursive: true });
-
-    const savedFiles: string[] = [];
-    const ext = MIME_TO_EXT[result.mimeType] ?? "png";
-
-    for (const imageBuffer of result.images) {
-      const uid = crypto.randomUUID().slice(0, 8);
-      const filename = `${Date.now()}-${uid}.${ext}`;
-      const filePath = path.join(resolvedDir, filename);
-      await fs.promises.writeFile(filePath, imageBuffer);
-      savedFiles.push(filePath);
-    }
-
-    // Build response
     const response: Record<string, unknown> = {
-      model: modelId,
-      savedFiles,
-      settings: { resolution, aspectRatio, mode },
+      model: outcome.model,
+      savedFiles: outcome.savedFiles,
+      settings: outcome.settings,
     };
-    if (result.description) {
-      response.description = result.description;
+    if (outcome.description) {
+      response.description = outcome.description;
     }
 
     return {
