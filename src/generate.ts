@@ -149,13 +149,26 @@ export async function generateImageToDisk(
 
   const resolvedDir = resolveOutputDir(outputDir, outputBaseDir);
 
+  // Resolve model -> provider first: the provider's input-image limit has to be
+  // enforced before anything is read, or a caller could exhaust memory with a
+  // long list of paths and only hit the limit once every file is already
+  // buffered.
+  const { modelId, generate, maxInputImages } = registry.resolve(model);
+
+  if (
+    maxInputImages !== undefined &&
+    inputImages !== undefined &&
+    inputImages.length > maxInputImages
+  ) {
+    throw new Error(
+      `${model} accepts at most ${maxInputImages} input images (got ${inputImages.length}).`,
+    );
+  }
+
   const { buffers, mimeTypes } =
     inputImages && inputImages.length > 0
       ? await readInputImages(inputImages, outputBaseDir)
       : { buffers: [], mimeTypes: [] };
-
-  // Resolve model -> provider before doing any filesystem writes.
-  const { modelId, generate } = registry.resolve(model);
 
   const result = await generate({
     prompt,

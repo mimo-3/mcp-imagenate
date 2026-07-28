@@ -20,4 +20,10 @@ export type ProviderFn = (params: GenerateParams) => Promise<GenerateResult>;
 export interface ProviderRegistration {
   models: Record<string, string>;
   generate: ProviderFn;
+  /**
+   * How many input images the provider accepts. Callers use this to reject an
+   * oversized request before reading any of the files off disk; omit it when
+   * the provider has no documented limit.
+   */
+  maxInputImages?: number;
 }
