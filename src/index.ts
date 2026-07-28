@@ -25,7 +25,7 @@ const registry = createRegistry(keysFromEnv());
 
 if (registry.models.length === 0) {
   console.error(
-    "Error: No API keys configured. Set at least one of: GEMINI_API_KEY / NANO_BANANA_API_KEY, OPENAI_API_KEY / GPT_IMAGE_API_KEY, BFL_API_KEY",
+    "Error: No API keys configured. Set at least one of: GEMINI_API_KEY / NANO_BANANA_API_KEY, OPENAI_API_KEY / GPT_IMAGE_API_KEY, BFL_API_KEY, REVE_API_KEY / REVE_API_TOKEN",
   );
   process.exit(1);
 }
@@ -90,7 +90,8 @@ const GenerateImageSchema = {
     .optional()
     .describe(
       "File paths of images to include as input alongside the prompt (supports PNG, JPEG, WEBP, GIF). " +
-        "Supported by Google models and OpenAI gpt-image models (uses the images.edit endpoint).",
+        "Supported by Google models, OpenAI gpt-image models (uses the images.edit endpoint) " +
+        "and Reve (sent as v2 references).",
     ),
 };
 
@@ -106,7 +107,7 @@ server.registerTool(
   {
     title: "Generate Image",
     description:
-      "Generate images using multiple providers (Google Gemini, OpenAI, BFL FLUX). " +
+      "Generate images using multiple providers (Google Gemini, OpenAI, BFL FLUX, Reve). " +
       "Images are saved to disk and the file paths are returned.",
     inputSchema: GenerateImageSchema,
   },
