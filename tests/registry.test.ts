@@ -31,6 +31,13 @@ describe("provider creation", () => {
     ]);
     assert.equal(typeof provider.generate, "function");
   });
+
+  it("createReveProvider returns expected model names", async () => {
+    const { createReveProvider } = await import("../src/providers/reve.js");
+    const provider = createReveProvider("test-key");
+    assert.deepEqual(Object.keys(provider.models), ["reve-image"]);
+    assert.equal(typeof provider.generate, "function");
+  });
 });
 
 describe("createRegistry", () => {
@@ -76,8 +83,21 @@ describe("createRegistry", () => {
   });
 
   it("prefers gpt-image-2 as the default when several providers are configured", () => {
-    const registry = createRegistry({ google: "k", openai: "k", flux: "k" });
+    const registry = createRegistry({ google: "k", openai: "k", flux: "k", reve: "k" });
     assert.equal(registry.defaultModel, "gpt-image-2");
+  });
+
+  it("registers Reve when only its key is supplied", () => {
+    const registry = createRegistry({ reve: "k" });
+    assert.deepEqual(registry.models, ["reve-image"]);
+    assert.equal(registry.defaultModel, "reve-image");
+  });
+
+  it("carries a provider's input-image limit through to the resolved model", () => {
+    // generateImageToDisk reads this before touching the filesystem, so it has
+    // to survive registration rather than living only on the provider.
+    assert.equal(createRegistry({ reve: "k" }).resolve("reve-image").maxInputImages, 8);
+    assert.equal(createRegistry({ openai: "k" }).resolve("gpt-image-2").maxInputImages, undefined);
   });
 
   it("keeps a Google-only setup defaulting to the cheaper nano-banana-2", () => {
@@ -99,8 +119,9 @@ describe("keysFromEnv", () => {
       NANO_BANANA_API_KEY: "g",
       OPENAI_API_KEY: "o",
       BFL_API_KEY: "f",
+      REVE_API_KEY: "r",
     } as NodeJS.ProcessEnv);
-    assert.deepEqual(keys, { google: "g", openai: "o", flux: "f" });
+    assert.deepEqual(keys, { google: "g", openai: "o", flux: "f", reve: "r" });
   });
 
   it("prefers the provider-specific alias over the generic one", () => {
@@ -112,6 +133,34 @@ describe("keysFromEnv", () => {
     } as NodeJS.ProcessEnv);
     assert.equal(keys.google, "specific");
     assert.equal(keys.openai, "specific");
+  });
+
+  it("accepts REVE_API_TOKEN as an alias for REVE_API_KEY", () => {
+    assert.equal(
+      keysFromEnv({ REVE_API_TOKEN: "t" } as NodeJS.ProcessEnv).reve,
+      "t",
+    );
+    assert.equal(
+      keysFromEnv({
+        REVE_API_KEY: "k",
+        REVE_API_TOKEN: "t",
+      } as NodeJS.ProcessEnv).reve,
+      "k",
+    );
+  });
+
+  it("treats an empty preferred variable as unset and uses the fallback", () => {
+    // Env templates routinely define the preferred name as "", which must not
+    // shadow an alias that actually holds a key.
+    const keys = keysFromEnv({
+      NANO_BANANA_API_KEY: "",
+      GEMINI_API_KEY: "g",
+      GPT_IMAGE_API_KEY: "",
+      OPENAI_API_KEY: "o",
+      REVE_API_KEY: "",
+      REVE_API_TOKEN: "r",
+    } as NodeJS.ProcessEnv);
+    assert.deepEqual(keys, { google: "g", openai: "o", reve: "r" });
   });
 
   it("still falls back to the generic variable when only that is set", () => {

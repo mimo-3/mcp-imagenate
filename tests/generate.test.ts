@@ -289,4 +289,46 @@ describe("generateImageToDisk", () => {
       }
     });
   });
+
+  describe("provider input-image limits", () => {
+    /** A registry whose model caps input images, like Reve's does. */
+    function cappedRegistry(maxInputImages: number): ImageRegistry {
+      const base = fakeRegistry();
+      return {
+        ...base,
+        resolve(name: string) {
+          return { ...base.resolve(name), maxInputImages };
+        },
+      };
+    }
+
+    it("rejects too many input images without reading any of them", async () => {
+      // Every path is nonexistent: if the limit were enforced after reading,
+      // the failure would be a filesystem error instead of the limit message.
+      await assert.rejects(
+        () =>
+          generateImageToDisk({
+            registry: cappedRegistry(2),
+            prompt: "a cat",
+            model: "fake-model",
+            outputDir: tmpDir,
+            inputImages: ["/nope/a.png", "/nope/b.png", "/nope/c.png"],
+          }),
+        /fake-model accepts at most 2 input images \(got 3\)/,
+      );
+    });
+
+    it("leaves a request at the limit alone", async () => {
+      const image = path.join(tmpDir, "in.png");
+      fs.writeFileSync(image, Buffer.from("fake"));
+      const outcome = await generateImageToDisk({
+        registry: cappedRegistry(2),
+        prompt: "a cat",
+        model: "fake-model",
+        outputDir: tmpDir,
+        inputImages: [image, image],
+      });
+      assert.equal(outcome.savedFiles.length, 1);
+    });
+  });
 });
