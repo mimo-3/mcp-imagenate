@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "openai": "^6.32.0",
     "zod": "^3.22.0"
   },
