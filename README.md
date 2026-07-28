@@ -4,7 +4,7 @@
   <img src="https://raw.githubusercontent.com/mimo-3/mcp-imagenate/main/imagenerate-cat.png" alt="mcp-imagenate" width="400">
 </p>
 
-An MCP server for image generation using multiple providers: **Google Gemini**, **OpenAI (gpt-image)**, and **BFL FLUX**.
+An MCP server for image generation using multiple providers: **Google Gemini**, **OpenAI (gpt-image)**, **BFL FLUX**, and **Reve**.
 
 ## Providers & Models
 
@@ -28,6 +28,31 @@ An MCP server for image generation using multiple providers: **Google Gemini**, 
 | `flux-2-klein`  | `klein-4b`    | Fast, lightweight generation     |
 | `flux-2-pro`    | `pro-preview` | Balanced quality and speed       |
 | `flux-2-max`    | `max`         | Maximum quality                  |
+
+### Reve
+
+| Name         | Version  | Best for                       |
+| ------------ | -------- | ------------------------------ |
+| `reve-image` | `latest` | Typography and layout fidelity |
+
+This provider calls Reve's `v2/image/create` endpoint. `latest` is the only version
+alias v2 exposes, and it is what the response reports back, so there is no dated
+build to pin to. Do not confuse it with the `v1` endpoints, which still serve the
+older `reve-create@20250915` model.
+
+Things worth knowing before sending Reve a prompt written for another provider:
+
+- `resolution` is ignored — Reve has no size parameter and returns its own large
+  output. Exact dimensions vary between requests: `16:9` came back as both
+  5408x3072 and 5376x3072, and `3:4` as 3456x4800.
+- Prompts are capped at 4,000 characters, and this provider rejects longer ones
+  before spending a request.
+- `inputImages` become v2 `references`. Reve accepts at most eight; a longer list
+  is rejected before any of the files are read.
+- The saved file's extension follows the format Reve actually returned (PNG, JPEG
+  or WebP), which is detected from the bytes rather than assumed.
+- A generation costs 150 credits (about $0.20) and typically takes 40-80 seconds.
+  Give any proxy or job runner in front of it a timeout of at least 120 seconds.
 
 ## Requirements
 
@@ -63,6 +88,11 @@ export GPT_IMAGE_API_KEY=your_key_here
 
 # BFL FLUX
 export BFL_API_KEY=your_key_here
+
+# Reve (at least one)
+export REVE_API_KEY=your_key_here
+# or
+export REVE_API_TOKEN=your_key_here
 ```
 
 ### Claude Desktop
@@ -93,6 +123,8 @@ Add to your `claude_desktop_config.json`:
 | `OPENAI_API_KEY`          | \*       | OpenAI API key                                                                                                |
 | `GPT_IMAGE_API_KEY`       | \*       | Alternative to `OPENAI_API_KEY` (takes precedence)                                                            |
 | `BFL_API_KEY`             | \*       | BFL FLUX API key                                                                                              |
+| `REVE_API_KEY`            | \*       | Reve partner API token (from the API console at api.reve.com)                                                 |
+| `REVE_API_TOKEN`          | \*       | Alternative to `REVE_API_KEY` (`REVE_API_KEY` takes precedence)                                               |
 | `NANO_BANANA_OUTPUT_DIR`  | No       | Base directory for saved images. When set, all output and input paths are sandboxed within this directory. **Recommended for production.** |
 
 \* At least one provider API key must be set.
@@ -110,7 +142,7 @@ Add to your `claude_desktop_config.json`:
 | `mode`         | `"image"` \| `"image_and_text"`                        | `"image"`         | Return image only, or image with description (Google models only)             |
 | `thinking`     | `"none"` \| `"auto"`                                   | `"auto"`          | Controls model thinking (Google models only)                                  |
 | `outputDir`    | `string`                                               | `"."`             | Directory where images will be saved                                          |
-| `inputImages`  | `string[]`                                             | -                 | File paths of images to send alongside the prompt (Google models, and OpenAI gpt-image models via the images.edit endpoint) |
+| `inputImages`  | `string[]`                                             | -                 | File paths of images to send alongside the prompt (Google models, OpenAI gpt-image models via the images.edit endpoint, and Reve via v2 `references`) |
 
 #### Supported aspect ratios
 
