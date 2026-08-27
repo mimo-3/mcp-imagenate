@@ -11,6 +11,7 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import type { ImageRegistry } from "./providers/registry.js";
+import type { Background } from "./providers/types.js";
 import { MAX_INPUT_IMAGE_SIZE, resolveInputImagePath, resolveOutputDir } from "./sandbox.js";
 
 /** Output MIME -> file extension. Anything unlisted is saved as .png. */
@@ -46,6 +47,7 @@ export const ASPECT_RATIOS: AspectRatio[] = [
   "16:9",
   "21:9",
 ];
+export const BACKGROUNDS: Background[] = ["auto", "transparent", "opaque"];
 
 export interface GenerateImageOptions {
   /** Registry to resolve `model` against. */
@@ -59,6 +61,14 @@ export interface GenerateImageOptions {
   mode?: GenerationMode;
   /** Google models only; ignored elsewhere. */
   thinking?: Thinking;
+  /**
+   * What the image sits on. Defaults to "auto".
+   *
+   * "transparent" only reaches providers that declare
+   * `supportsTransparentBackground` (OpenAI gpt-image models); any other model
+   * is rejected rather than quietly handed back an opaque image.
+   */
+  background?: Background;
   /**
    * Where to write the generated files. Relative paths resolve against
    * `outputBaseDir` when one is set, otherwise against process.cwd().
@@ -86,6 +96,7 @@ export interface GenerateImageOutcome {
     resolution: Resolution;
     aspectRatio: AspectRatio;
     mode: GenerationMode;
+    background: Background;
   };
 }
 
@@ -142,6 +153,7 @@ export async function generateImageToDisk(
     aspectRatio = "1:1",
     mode = "image",
     thinking = "auto",
+    background = "auto",
     outputDir = ".",
     outputBaseDir = null,
     inputImages,
@@ -153,7 +165,19 @@ export async function generateImageToDisk(
   // enforced before anything is read, or a caller could exhaust memory with a
   // long list of paths and only hit the limit once every file is already
   // buffered.
-  const { modelId, generate, maxInputImages } = registry.resolve(model);
+  const { modelId, generate, maxInputImages, supportsTransparentBackground } =
+    registry.resolve(model);
+
+  // Refuse rather than pass the request on: a provider that ignores the field
+  // returns a perfectly plausible opaque image, and the caller only finds out
+  // once the alpha channel is missing from the file it already paid for.
+  if (background === "transparent" && !supportsTransparentBackground) {
+    throw new Error(
+      `${model} cannot return a transparent background. ` +
+        `Only OpenAI gpt-image models produce an alpha channel; ` +
+        `use background "auto" or "opaque" with ${model}.`,
+    );
+  }
 
   if (
     maxInputImages !== undefined &&
@@ -177,6 +201,7 @@ export async function generateImageToDisk(
     aspectRatio,
     mode,
     thinking,
+    background,
     inputImages: buffers.length > 0 ? buffers : undefined,
     inputImageMimeTypes: mimeTypes.length > 0 ? mimeTypes : undefined,
   });
@@ -197,7 +222,7 @@ export async function generateImageToDisk(
   const outcome: GenerateImageOutcome = {
     model: modelId,
     savedFiles,
-    settings: { resolution, aspectRatio, mode },
+    settings: { resolution, aspectRatio, mode, background },
   };
   if (result.description) {
     outcome.description = result.description;

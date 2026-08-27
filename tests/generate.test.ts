@@ -129,7 +129,7 @@ describe("generateImageToDisk", () => {
     assert.equal(seen?.thinking, "none");
   });
 
-  it("defaults to 1K / 1:1 / image when nothing is specified", async () => {
+  it("defaults to 1K / 1:1 / image / auto background when nothing is specified", async () => {
     let seen: GenerateParams | undefined;
     const outcome = await generateImageToDisk({
       registry: fakeRegistry({}, (p) => {
@@ -141,10 +141,14 @@ describe("generateImageToDisk", () => {
     });
     assert.equal(seen?.resolution, "1K");
     assert.equal(seen?.aspectRatio, "1:1");
+    // "auto" is what the provider used to hardcode: an omitted `background`
+    // must not change what an existing caller gets back.
+    assert.equal(seen?.background, "auto");
     assert.deepEqual(outcome.settings, {
       resolution: "1K",
       aspectRatio: "1:1",
       mode: "image",
+      background: "auto",
     });
   });
 
@@ -329,6 +333,89 @@ describe("generateImageToDisk", () => {
         inputImages: [image, image],
       });
       assert.equal(outcome.savedFiles.length, 1);
+    });
+  });
+
+  describe("background", () => {
+    /** A registry whose model declares transparency support, like OpenAI's. */
+    function transparentRegistry(
+      onCall?: (params: GenerateParams) => void,
+    ): ImageRegistry {
+      const base = fakeRegistry({}, onCall);
+      return {
+        ...base,
+        resolve(name: string) {
+          return { ...base.resolve(name), supportsTransparentBackground: true };
+        },
+      };
+    }
+
+    it("passes transparent through to a provider that supports it", async () => {
+      let seen: GenerateParams | undefined;
+      const outcome = await generateImageToDisk({
+        registry: transparentRegistry((p) => {
+          seen = p;
+        }),
+        prompt: "a cat",
+        model: "fake-model",
+        outputDir: tmpDir,
+        background: "transparent",
+      });
+      assert.equal(seen?.background, "transparent");
+      assert.equal(outcome.settings.background, "transparent");
+    });
+
+    it("passes opaque through even without transparency support", async () => {
+      // Only "transparent" needs the capability; "opaque" is universal.
+      let seen: GenerateParams | undefined;
+      await generateImageToDisk({
+        registry: fakeRegistry({}, (p) => {
+          seen = p;
+        }),
+        prompt: "a cat",
+        model: "fake-model",
+        outputDir: tmpDir,
+        background: "opaque",
+      });
+      assert.equal(seen?.background, "opaque");
+    });
+
+    it("rejects transparent on a provider that cannot deliver it", async () => {
+      // The whole point of the check: silently returning an opaque image is
+      // what this replaces, so the provider must not be reached at all.
+      let called = false;
+      await assert.rejects(
+        () =>
+          generateImageToDisk({
+            registry: fakeRegistry({}, () => {
+              called = true;
+            }),
+            prompt: "a cat",
+            model: "fake-model",
+            outputDir: tmpDir,
+            background: "transparent",
+          }),
+        /fake-model cannot return a transparent background/,
+      );
+      assert.equal(called, false);
+      assert.equal(fs.readdirSync(tmpDir).length, 0);
+    });
+
+    it("rejects transparent before reading any input image", async () => {
+      // A nonexistent path would raise a filesystem error if the capability
+      // check ran too late.
+      await assert.rejects(
+        () =>
+          generateImageToDisk({
+            registry: fakeRegistry(),
+            prompt: "a cat",
+            model: "fake-model",
+            outputDir: tmpDir,
+            background: "transparent",
+            inputImages: ["/nope/a.png"],
+          }),
+        /cannot return a transparent background/,
+      );
     });
   });
 });

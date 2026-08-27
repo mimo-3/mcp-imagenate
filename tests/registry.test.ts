@@ -100,6 +100,19 @@ describe("createRegistry", () => {
     assert.equal(createRegistry({ openai: "k" }).resolve("gpt-image-2").maxInputImages, undefined);
   });
 
+  it("marks only the gpt-image models as able to return transparency", () => {
+    // Read by generateImageToDisk to reject `background: "transparent"` up
+    // front, so it too has to survive registration.
+    const supports = (keys: Parameters<typeof createRegistry>[0], model: string) =>
+      createRegistry(keys).resolve(model).supportsTransparentBackground;
+
+    assert.equal(supports({ openai: "k" }, "gpt-image-2"), true);
+    assert.equal(supports({ google: "k" }, "nano-banana-2"), undefined);
+    assert.equal(supports({ google: "k" }, "nano-banana-pro"), undefined);
+    assert.equal(supports({ flux: "k" }, "flux-2-pro"), undefined);
+    assert.equal(supports({ reve: "k" }, "reve-image"), undefined);
+  });
+
   it("keeps a Google-only setup defaulting to the cheaper nano-banana-2", () => {
     // Changing this would silently move existing users onto a slower, pricier
     // model whenever they omit `model`.

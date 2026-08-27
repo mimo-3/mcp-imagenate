@@ -21,6 +21,9 @@ An MCP server for image generation using multiple providers: **Google Gemini**, 
 | ------------- | ------------- | ---------------------------------- |
 | `gpt-image-2` | `gpt-image-2` | Latest generation, improved detail |
 
+These are the only models here that can return a transparent background — see
+[Transparent backgrounds](#transparent-backgrounds).
+
 ### BFL FLUX
 
 | Name            | Model ID      | Best for                         |
@@ -140,6 +143,7 @@ Add to your `claude_desktop_config.json`:
 | `resolution`   | `"1K"` \| `"2K"` \| `"4K"`                            | `"1K"`            | Output image resolution                                                       |
 | `aspectRatio`  | see below                                              | `"1:1"`           | Aspect ratio of the image                                                     |
 | `mode`         | `"image"` \| `"image_and_text"`                        | `"image"`         | Return image only, or image with description (Google models only)             |
+| `background`   | `"auto"` \| `"transparent"` \| `"opaque"`              | `"auto"`          | What the image sits on. `"transparent"` needs a gpt-image model — see below   |
 | `thinking`     | `"none"` \| `"auto"`                                   | `"auto"`          | Controls model thinking (Google models only)                                  |
 | `outputDir`    | `string`                                               | `"."`             | Directory where images will be saved                                          |
 | `inputImages`  | `string[]`                                             | -                 | File paths of images to send alongside the prompt (Google models, OpenAI gpt-image models via the images.edit endpoint, and Reve via v2 `references`) |
@@ -147,6 +151,22 @@ Add to your `claude_desktop_config.json`:
 #### Supported aspect ratios
 
 `1:1`, `2:3`, `3:2`, `3:4`, `4:3`, `9:16`, `16:9`, `21:9`
+
+#### Transparent backgrounds
+
+`background: "transparent"` saves a PNG with an alpha channel, which is useful for
+cutting out a subject to place on a slide or over another image.
+
+Only the OpenAI gpt-image models can do this. Asking any other model
+(`nano-banana-*`, `flux-2-*`, `reve-image`) for a transparent background **fails
+with an error** rather than quietly returning an opaque image — the request is
+rejected before it is sent, so nothing is spent on it. Writing "transparent
+background" into the prompt does not help either: those providers have no
+transparency mode at all.
+
+`"opaque"` forces a filled background on every provider that reads the field, and
+`"auto"` — the default — leaves the choice to the model, which is what this server
+has always done.
 
 ### Response
 
@@ -159,7 +179,8 @@ Returns a JSON object:
   "settings": {
     "resolution": "1K",
     "aspectRatio": "9:16",
-    "mode": "image"
+    "mode": "image",
+    "background": "auto"
   },
   "description": "..."
 }
@@ -194,6 +215,11 @@ const outcome = await generateImageToDisk({
 
 console.log(outcome.savedFiles);
 ```
+
+`generateImageToDisk` takes the same options as the tool, so `background:
+"transparent"` throws for a model that cannot deliver an alpha channel. Check
+`registry.resolve(model).supportsTransparentBackground` first if the model is not
+one you chose yourself.
 
 The library entry point never reads `process.env`, writes to stdio, or exits the
 process. To read keys from the conventional environment variables anyway, use the
