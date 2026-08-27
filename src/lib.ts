@@ -18,6 +18,7 @@ export {
 export {
   generateImageToDisk,
   ASPECT_RATIOS,
+  BACKGROUNDS,
   RESOLUTIONS,
   type AspectRatio,
   type GenerateImageOptions,
@@ -28,6 +29,7 @@ export {
 } from "./generate.js";
 
 export type {
+  Background,
   GenerateParams,
   GenerateResult,
   ProviderFn,

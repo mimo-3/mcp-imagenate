@@ -3,7 +3,12 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import * as path from "path";
-import { ASPECT_RATIOS, generateImageToDisk, RESOLUTIONS } from "./generate.js";
+import {
+  ASPECT_RATIOS,
+  BACKGROUNDS,
+  generateImageToDisk,
+  RESOLUTIONS,
+} from "./generate.js";
 import { createRegistry, keysFromEnv } from "./providers/registry.js";
 import { getDefaultOutputBaseDir } from "./sandbox.js";
 
@@ -34,6 +39,12 @@ const availableModels = registry.models;
 // Non-null: guarded by the models.length check above.
 const defaultModel = registry.defaultModel!;
 
+// Named in the `background` description so the list stays honest as providers
+// gain or lose the capability, instead of hardcoding today's answer in prose.
+const transparentModels = availableModels.filter(
+  (name) => registry.resolve(name).supportsTransparentBackground,
+);
+
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
 const GenerateImageSchema = {
@@ -61,6 +72,18 @@ const GenerateImageSchema = {
     .enum(ASPECT_RATIOS as [string, ...string[]])
     .default("1:1")
     .describe("Aspect ratio of the generated image"),
+
+  background: z
+    .enum(BACKGROUNDS as [string, ...string[]])
+    .default("auto")
+    .describe(
+      "What the image sits on. transparent saves a PNG with an alpha channel and is supported by " +
+        (transparentModels.length > 0
+          ? `${transparentModels.join(", ")} only`
+          : "none of the configured models") +
+        " — requesting it on any other model fails with an error rather than returning a silently opaque image. " +
+        "opaque always fills the background; auto lets the model decide",
+    ),
 
   mode: z
     .enum(["image", "image_and_text"])
@@ -108,7 +131,9 @@ server.registerTool(
     title: "Generate Image",
     description:
       "Generate images using multiple providers (Google Gemini, OpenAI, BFL FLUX, Reve). " +
-      "Images are saved to disk and the file paths are returned.",
+      "Images are saved to disk and the file paths are returned. " +
+      "Transparent output (background: \"transparent\") requires an OpenAI gpt-image model; " +
+      "the other providers reject it with an error instead of returning an opaque image.",
     inputSchema: GenerateImageSchema,
   },
   async ({
@@ -117,6 +142,7 @@ server.registerTool(
     resolution,
     aspectRatio,
     mode,
+    background,
     outputDir,
     thinking,
     inputImages,
@@ -129,6 +155,7 @@ server.registerTool(
       aspectRatio: aspectRatio as "1:1",
       mode,
       thinking,
+      background: background as "auto",
       outputDir,
       outputBaseDir,
       inputImages,
