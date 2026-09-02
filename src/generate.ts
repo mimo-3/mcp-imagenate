@@ -100,8 +100,11 @@ export interface GenerateImageOutcome {
   };
 }
 
-/** Read, validate and buffer the input images for a request. */
-async function readInputImages(
+/**
+ * Read, validate and buffer the input images for a request. Shared with the
+ * video flow so both enforce the same allowlist and size cap.
+ */
+export async function readInputImages(
   inputImages: string[],
   outputBaseDir: string | null,
 ): Promise<{ buffers: Buffer[]; mimeTypes: string[] }> {
