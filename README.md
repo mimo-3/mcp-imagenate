@@ -222,8 +222,9 @@ Things worth knowing:
   up to 10 s, and the whole clip is returned each time.
 - Text in the prompt is rendered on screen as written, including non-Latin
   scripts, though Google only documents English as fully supported.
-- Clips longer than 5 s are fetched through Google's file endpoint rather than
-  inlined in the JSON response, as the API documentation recommends above 4 MB.
+- Clips are fetched through Google's file endpoint rather than inlined in the
+  JSON response, as the API documentation recommends above 4 MB. Expect one
+  extra request per generation.
 - 720p costs about $0.10 per second of output; there is no free tier for this model.
 
 ### Response
