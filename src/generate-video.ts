@@ -24,7 +24,7 @@ export const VIDEO_ASPECT_RATIOS: VideoAspectRatio[] = ["16:9", "9:16"];
 export interface GenerateVideoOptions {
   registry: VideoRegistry;
   prompt: string;
-  /** Friendly model name (e.g. "omni-flash"). */
+  /** Friendly model name (e.g. "gemini-omni-1.1-flash"). */
   model: string;
   /** Whole seconds; must fall within the model's supported range. */
   durationSeconds?: number;

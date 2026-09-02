@@ -174,7 +174,7 @@ export function createOmniVideoProvider(
 
   return {
     models: {
-      "omni-flash": "gemini-omni-1.1-flash",
+      "gemini-omni-1.1-flash": "gemini-omni-1.1-flash",
     },
     generate,
     minDurationSeconds: OMNI_MIN_DURATION_SECONDS,
