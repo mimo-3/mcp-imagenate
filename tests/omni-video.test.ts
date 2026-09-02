@@ -49,9 +49,9 @@ function json(body: unknown, status = 200): Response {
 }
 
 describe("createOmniVideoProvider", () => {
-  it("registers omni-flash against the Omni 1.1 model id with the 3–10 s range", () => {
+  it("registers gemini-omni-1.1-flash against the Omni 1.1 model id with the 3–10 s range", () => {
     const reg = createOmniVideoProvider("key");
-    assert.deepEqual(reg.models, { "omni-flash": "gemini-omni-1.1-flash" });
+    assert.deepEqual(reg.models, { "gemini-omni-1.1-flash": "gemini-omni-1.1-flash" });
     assert.equal(reg.minDurationSeconds, 3);
     assert.equal(reg.maxDurationSeconds, 10);
   });
