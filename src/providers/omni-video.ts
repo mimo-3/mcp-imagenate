@@ -18,13 +18,6 @@ const DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 export const OMNI_MIN_DURATION_SECONDS = 3;
 export const OMNI_MAX_DURATION_SECONDS = 10;
 
-/**
- * Above this size Google recommends `delivery: "uri"`; inline base64 still
- * worked at ~10 MB in practice, but the file endpoint is the documented path
- * and avoids a JSON body that grows with the clip.
- */
-const INLINE_DELIVERY_MAX_SECONDS = 5;
-
 export interface OmniVideoProviderOptions {
   /** Injected for tests; defaults to the global fetch. */
   fetch?: typeof fetch;
@@ -92,8 +85,6 @@ export function createOmniVideoProvider(
   };
 
   const generate = async (params: VideoGenerateParams): Promise<VideoGenerateResult> => {
-    const delivery = params.durationSeconds > INLINE_DELIVERY_MAX_SECONDS ? "uri" : "inline";
-
     const body: Record<string, unknown> = {
       model: params.modelId,
       input: buildInput(params),
@@ -102,7 +93,11 @@ export function createOmniVideoProvider(
         duration: `${params.durationSeconds}s`,
         resolution: params.resolution,
         aspect_ratio: params.aspectRatio,
-        delivery,
+        // Always fetch through the file endpoint. Google recommends it above
+        // 4 MB, and a 4k or extended clip blows past that at any duration, so
+        // choosing inline by some size heuristic would only fail on the
+        // requests that already took the longest.
+        delivery: "uri",
       },
     };
     if (params.previousInteractionId) {

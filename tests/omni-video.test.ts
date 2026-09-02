@@ -56,7 +56,7 @@ describe("createOmniVideoProvider", () => {
     assert.equal(reg.maxDurationSeconds, 10);
   });
 
-  it("posts to the interactions endpoint with the key header and video response_format", async () => {
+  it("posts to the interactions endpoint and still accepts an inline clip", async () => {
     const { fetchImpl, calls } = fakeFetch([
       () => json(interactionJson([{ type: "video", data: MP4.toString("base64"), mime_type: "video/mp4" }])),
     ]);
@@ -76,7 +76,7 @@ describe("createOmniVideoProvider", () => {
       duration: "4s",
       resolution: "360p",
       aspect_ratio: "9:16",
-      delivery: "inline",
+      delivery: "uri",
     });
     assert.equal("previous_interaction_id" in body, false);
     assert.deepEqual(result.video, MP4);
@@ -115,7 +115,7 @@ describe("createOmniVideoProvider", () => {
     assert.equal(calls.length, 0);
   });
 
-  it("asks for uri delivery on longer clips and downloads with the key header", async () => {
+  it("downloads a uri-delivered clip with the key header", async () => {
     const { fetchImpl, calls } = fakeFetch([
       () =>
         json(
@@ -130,7 +130,6 @@ describe("createOmniVideoProvider", () => {
     const result = await reg.generate(baseParams({ durationSeconds: 8 }));
 
     const body = JSON.parse(String(calls[0].init?.body));
-    assert.equal(body.response_format.delivery, "uri");
     assert.equal(body.response_format.duration, "8s");
     assert.equal(calls[1].url, "https://files.example/abc:download?alt=media");
     assert.equal((calls[1].init?.headers as Record<string, string>)["x-goog-api-key"], "secret");
