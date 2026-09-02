@@ -19,7 +19,7 @@ An MCP server for image generation using multiple providers: **Google Gemini**, 
 
 | Name         | Model ID               | Best for                                   |
 | ------------ | ---------------------- | ------------------------------------------ |
-| `omni-flash` | `gemini-omni-1.1-flash` | 3–10 s clips with audio, legible on-screen text |
+| `gemini-omni-1.1-flash` | `gemini-omni-1.1-flash` | 3–10 s clips with audio, legible on-screen text |
 
 Uses the same `GEMINI_API_KEY`. Exposed through a separate `generate_video` tool —
 see [Tool: `generate_video`](#tool-generate_video).
@@ -207,7 +207,7 @@ saves it as an mp4.
 | Parameter               | Type                                          | Default        | Description                                                                                       |
 | ----------------------- | --------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------- |
 | `prompt`                | `string` (1-32,000 chars)                     | -              | Subject, motion, camera, and any on-screen text spelled out exactly                               |
-| `model`                 | `"omni-flash"`                                | `"omni-flash"` | Video model to use                                                                                |
+| `model`                 | `"gemini-omni-1.1-flash"`                                | `"gemini-omni-1.1-flash"` | Video model to use                                                                                |
 | `durationSeconds`       | integer `3`–`10`                              | `5`            | Clip length. Cost scales with the second, and so does generation time (roughly 1 min for 5 s, 2 min for 10 s) |
 | `resolution`            | `"360p"` \| `"720p"` \| `"1080p"` \| `"4k"` | `"720p"`       | Playback resolution. `360p` is the cheapest and fastest; `1080p` and `4k` are upscaled from 720p |
 | `aspectRatio`           | `"16:9"` \| `"9:16"`                          | `"16:9"`       | Landscape or portrait                                                                             |
