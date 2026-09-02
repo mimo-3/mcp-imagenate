@@ -64,8 +64,11 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
           n: 1,
           size: size as "1024x1024",
           quality,
+          // Always PNG: of the formats this endpoint offers it is the only one
+          // that can carry the alpha channel `background: "transparent"` asks
+          // for.
           output_format: "png",
-          background: "auto",
+          background: params.background,
         })
       : await client.images.generate({
           model: params.modelId,
@@ -75,7 +78,7 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
           quality,
           output_format: "png",
           moderation: "auto",
-          background: "auto",
+          background: params.background,
         });
 
     const images = (result.data ?? [])
@@ -94,5 +97,6 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
       "gpt-image-2": "gpt-image-2",
     },
     generate,
+    supportsTransparentBackground: true,
   };
 }

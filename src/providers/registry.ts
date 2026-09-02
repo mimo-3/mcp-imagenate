@@ -9,6 +9,8 @@ export interface ResolvedModel {
   generate: ProviderFn;
   /** See `ProviderRegistration.maxInputImages`. */
   maxInputImages?: number;
+  /** See `ProviderRegistration.supportsTransparentBackground`. */
+  supportsTransparentBackground?: boolean;
 }
 
 /**
@@ -87,6 +89,9 @@ export function createRegistry(keys: ProviderKeys): ImageRegistry {
       const entry: ResolvedModel = { modelId, generate: registration.generate };
       if (registration.maxInputImages !== undefined) {
         entry.maxInputImages = registration.maxInputImages;
+      }
+      if (registration.supportsTransparentBackground !== undefined) {
+        entry.supportsTransparentBackground = registration.supportsTransparentBackground;
       }
       entries.set(friendly, entry);
     }

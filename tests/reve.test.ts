@@ -78,6 +78,7 @@ function params(overrides: Partial<GenerateParams> = {}): GenerateParams {
     aspectRatio: "16:9",
     mode: "image",
     thinking: "auto",
+    background: "auto",
     ...overrides,
   };
 }
