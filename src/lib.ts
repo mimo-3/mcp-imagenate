@@ -43,3 +43,26 @@ export {
   resolveOutputDir,
   MAX_INPUT_IMAGE_SIZE,
 } from "./sandbox.js";
+
+export {
+  createVideoRegistry,
+  type ResolvedVideoModel,
+  type VideoRegistry,
+} from "./providers/video-registry.js";
+
+export {
+  generateVideoToDisk,
+  VIDEO_ASPECT_RATIOS,
+  VIDEO_RESOLUTIONS,
+  type GenerateVideoOptions,
+  type GenerateVideoOutcome,
+} from "./generate-video.js";
+
+export type {
+  VideoAspectRatio,
+  VideoGenerateParams,
+  VideoGenerateResult,
+  VideoProviderFn,
+  VideoProviderRegistration,
+  VideoResolution,
+} from "./providers/video-types.js";
