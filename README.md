@@ -4,7 +4,7 @@
   <img src="https://raw.githubusercontent.com/mimo-3/mcp-imagenate/main/imagenerate-cat.png" alt="mcp-imagenate" width="400">
 </p>
 
-An MCP server for image generation using multiple providers: **Google Gemini**, **OpenAI (gpt-image)**, **BFL FLUX**, and **Reve**.
+An MCP server for image generation using multiple providers: **Google Gemini**, **OpenAI (gpt-image)**, **BFL FLUX**, and **Reve** — plus short video clips through **Google Gemini Omni**.
 
 ## Providers & Models
 
@@ -14,6 +14,15 @@ An MCP server for image generation using multiple providers: **Google Gemini**, 
 | ----------------- | -------------------------------- | ---------------------------- |
 | `nano-banana-2`   | `gemini-3.1-flash-image-preview` | Fast, high-volume generation |
 | `nano-banana-pro` | `gemini-3-pro-image-preview`     | Highest quality output       |
+
+### Google Gemini Omni (video)
+
+| Name         | Model ID               | Best for                                   |
+| ------------ | ---------------------- | ------------------------------------------ |
+| `omni-flash` | `gemini-omni-1.1-flash` | 3–10 s clips with audio, legible on-screen text |
+
+Uses the same `GEMINI_API_KEY`. Exposed through a separate `generate_video` tool —
+see [Tool: `generate_video`](#tool-generate_video).
 
 ### OpenAI
 
@@ -188,6 +197,53 @@ Returns a JSON object:
 
 > `description` is only present when `mode` is `"image_and_text"`.
 
+## Tool: `generate_video`
+
+Available when a Google key is configured. Generates one clip with audio and
+saves it as an mp4.
+
+### Parameters
+
+| Parameter               | Type                                          | Default        | Description                                                                                       |
+| ----------------------- | --------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------- |
+| `prompt`                | `string` (1-32,000 chars)                     | -              | Subject, motion, camera, and any on-screen text spelled out exactly                               |
+| `model`                 | `"omni-flash"`                                | `"omni-flash"` | Video model to use                                                                                |
+| `durationSeconds`       | integer `3`–`10`                              | `5`            | Clip length. Cost scales with the second, and so does generation time (roughly 1 min for 5 s, 2 min for 10 s) |
+| `resolution`            | `"360p"` \| `"720p"` \| `"1080p"` \| `"4k"` | `"720p"`       | Playback resolution. `360p` is the cheapest and fastest; `1080p` and `4k` are upscaled from 720p |
+| `aspectRatio`           | `"16:9"` \| `"9:16"`                          | `"16:9"`       | Landscape or portrait                                                                             |
+| `outputDir`             | `string`                                      | `"."`          | Directory where the clip will be saved (same sandboxing as `generate_image`)                     |
+| `inputImages`           | `string[]`                                    | -              | Reference images sent ahead of the prompt: a first frame to animate, or subjects and styles to keep. Refer to them as `<IMAGE_REF_1>`, `<IMAGE_REF_2>`, … |
+| `previousInteractionId` | `string`                                      | -              | `interactionId` from an earlier result. Extends that clip instead of starting a new one; the prompt describes what happens next |
+
+Things worth knowing:
+
+- A single request is capped at 10 s by the model. To go longer, pass the
+  returned `interactionId` back as `previousInteractionId`; each extension adds
+  up to 10 s, and the whole clip is returned each time.
+- Text in the prompt is rendered on screen as written, including non-Latin
+  scripts, though Google only documents English as fully supported.
+- Clips longer than 5 s are fetched through Google's file endpoint rather than
+  inlined in the JSON response, as the API documentation recommends above 4 MB.
+- 720p costs about $0.10 per second of output; there is no free tier for this model.
+
+### Response
+
+```json
+{
+  "model": "gemini-omni-1.1-flash",
+  "savedFile": "/path/to/1788347054697-491db547.mp4",
+  "settings": {
+    "durationSeconds": 5,
+    "resolution": "720p",
+    "aspectRatio": "16:9"
+  },
+  "interactionId": "v1_...",
+  "description": "..."
+}
+```
+
+> `description` is only present when the model returns text alongside the clip.
+
 ## Use as a library
 
 Besides the standalone MCP server, this package can be embedded in another host —
@@ -230,12 +286,14 @@ process. To read keys from the conventional environment variables anyway, use th
 | `createRegistry(keys)` | Build a registry of the models available for the given keys |
 | `keysFromEnv(env?)` | Read provider keys from environment variables |
 | `generateImageToDisk(options)` | Generate images and write them to disk |
+| `createVideoRegistry(keys)` | Build a registry of the video models available for the given keys |
+| `generateVideoToDisk(options)` | Generate a clip and write it to disk |
 | `resolveOutputDir` / `resolveInputImagePath` | Path sandboxing helpers (opt-in) |
 
 ## Security
 
 - **Path sandboxing**: When `NANO_BANANA_OUTPUT_DIR` is set, both output and input image paths are sandboxed within this directory. Symlinks that resolve outside the sandbox are rejected. For library embedders this is opt-in via `outputBaseDir`, since the host usually controls which paths reach the call.
-- **Input validation**: Input images are validated for format (PNG/JPEG/WEBP/GIF) and size (max 20 MB).
+- **Input validation**: Input images are validated for format (PNG/JPEG/WEBP/GIF) and size (max 20 MB). Video durations outside the model's range are rejected before any request is sent.
 - **API key validation**: The server exits immediately if no API keys are configured. The library reports this as an empty registry instead, leaving the decision to the host.
 
 ## License
