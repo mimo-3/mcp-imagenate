@@ -69,6 +69,28 @@ describe("createOpenAIProvider", () => {
     );
   });
 
+  for (const modelId of ["gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]) {
+    it(`sends ${modelId} through to images.generate`, async () => {
+      const { calls } = stubFetch();
+      await createOpenAIProvider("k").generate(params({ modelId }));
+
+      assert.equal(calls.length, 1);
+      assert.match(calls[0].url, /\/images\/generations$/);
+      assert.equal(calls[0].fields.model, modelId);
+    });
+
+    it(`sends ${modelId} through to images.edit`, async () => {
+      const { calls } = stubFetch();
+      await createOpenAIProvider("k").generate(
+        params({ modelId, inputImages: [PNG], inputImageMimeTypes: ["image/png"] }),
+      );
+
+      assert.equal(calls.length, 1);
+      assert.match(calls[0].url, /\/images\/edits$/);
+      assert.equal(calls[0].fields.model, modelId);
+    });
+  }
+
   for (const background of ["auto", "transparent", "opaque"] as Background[]) {
     it(`sends background=${background} to images.generate`, async () => {
       const { calls } = stubFetch();
