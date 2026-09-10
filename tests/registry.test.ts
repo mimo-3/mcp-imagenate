@@ -17,7 +17,7 @@ describe("provider creation", () => {
   it("createOpenAIProvider returns expected model names", async () => {
     const { createOpenAIProvider } = await import("../src/providers/openai.js");
     const provider = createOpenAIProvider("test-key");
-    assert.deepEqual(Object.keys(provider.models), ["gpt-image-2"]);
+    assert.deepEqual(Object.keys(provider.models), ["gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]);
     assert.equal(typeof provider.generate, "function");
   });
 
@@ -43,7 +43,7 @@ describe("provider creation", () => {
 describe("createRegistry", () => {
   it("registers only the providers whose key is supplied", () => {
     const registry = createRegistry({ openai: "k" });
-    assert.deepEqual(registry.models, ["gpt-image-2"]);
+    assert.deepEqual(registry.models, ["gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]);
   });
 
   it("returns an empty registry instead of exiting when no keys are given", () => {
@@ -64,7 +64,7 @@ describe("createRegistry", () => {
     const registry = createRegistry({ openai: "k" });
     assert.throws(
       () => registry.resolve("nano-banana-2"),
-      /Available: gpt-image-2/,
+      /Available: gpt-image-2, gpt-image-2\.5-flare, gpt-image-2\.5-sunburst$/,
     );
   });
 
@@ -79,12 +79,21 @@ describe("createRegistry", () => {
   it("keeps registries independent of one another", () => {
     const openaiOnly = createRegistry({ openai: "k" });
     createRegistry({ google: "k", flux: "k" });
-    assert.deepEqual(openaiOnly.models, ["gpt-image-2"]);
+    assert.deepEqual(openaiOnly.models, ["gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]);
   });
 
   it("prefers gpt-image-2 as the default when several providers are configured", () => {
     const registry = createRegistry({ google: "k", openai: "k", flux: "k", reve: "k" });
     assert.equal(registry.defaultModel, "gpt-image-2");
+  });
+
+  it("keeps gpt-image-2 first, and the default, after 2.5 was added", () => {
+    // Both the fallback and `models[0]` have to stay on gpt-image-2: a caller
+    // that reads the list rather than `defaultModel` must not quietly move to
+    // a model with different pricing and latency.
+    const registry = createRegistry({ openai: "k" });
+    assert.equal(registry.defaultModel, "gpt-image-2");
+    assert.equal(registry.models[0], "gpt-image-2");
   });
 
   it("registers Reve when only its key is supplied", () => {
@@ -107,6 +116,8 @@ describe("createRegistry", () => {
       createRegistry(keys).resolve(model).supportsTransparentBackground;
 
     assert.equal(supports({ openai: "k" }, "gpt-image-2"), true);
+    assert.equal(supports({ openai: "k" }, "gpt-image-2.5-flare"), true);
+    assert.equal(supports({ openai: "k" }, "gpt-image-2.5-sunburst"), true);
     assert.equal(supports({ google: "k" }, "nano-banana-2"), undefined);
     assert.equal(supports({ google: "k" }, "nano-banana-pro"), undefined);
     assert.equal(supports({ flux: "k" }, "flux-2-pro"), undefined);

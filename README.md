@@ -26,9 +26,11 @@ see [Tool: `generate_video`](#tool-generate_video).
 
 ### OpenAI
 
-| Name          | Model ID      | Best for                           |
-| ------------- | ------------- | ---------------------------------- |
-| `gpt-image-2` | `gpt-image-2` | Latest generation, improved detail |
+| Name                     | Model ID                 | Best for                                    |
+| ------------------------ | ------------------------ | ------------------------------------------- |
+| `gpt-image-2`            | `gpt-image-2`            | Previous generation, still the default here |
+| `gpt-image-2.5-flare`    | `gpt-image-2.5-flare`    | Fast generation, cheap at medium and high   |
+| `gpt-image-2.5-sunburst` | `gpt-image-2.5-sunburst` | Precise edits, slower than Flare            |
 
 These are the only models here that can return a transparent background — see
 [Transparent backgrounds](#transparent-backgrounds).
