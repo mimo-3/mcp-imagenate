@@ -94,6 +94,11 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
 
   return {
     models: {
+      // Two sibling models rather than one "gpt-image-2.5": OpenAI ships no
+      // bare 2.5 id. Flare is the fast one, Sunburst trades latency for
+      // edit fidelity. Both cost a quarter of gpt-image-2 at medium and high.
+      "gpt-image-2.5-flare": "gpt-image-2.5-flare",
+      "gpt-image-2.5-sunburst": "gpt-image-2.5-sunburst",
       "gpt-image-2": "gpt-image-2",
     },
     generate,
