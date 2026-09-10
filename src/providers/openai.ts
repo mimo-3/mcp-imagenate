@@ -94,12 +94,16 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
 
   return {
     models: {
+      // gpt-image-2 stays first on purpose. Registration order decides both
+      // `registry.models[0]` and the first entry of the MCP `model` enum, and
+      // a caller that reaches for either instead of `defaultModel` would
+      // silently change which model it pays for.
+      "gpt-image-2": "gpt-image-2",
       // Two sibling models rather than one "gpt-image-2.5": OpenAI ships no
       // bare 2.5 id. Flare is the fast one, Sunburst trades latency for
       // edit fidelity. Both cost a quarter of gpt-image-2 at medium and high.
       "gpt-image-2.5-flare": "gpt-image-2.5-flare",
       "gpt-image-2.5-sunburst": "gpt-image-2.5-sunburst",
-      "gpt-image-2": "gpt-image-2",
     },
     generate,
     supportsTransparentBackground: true,
