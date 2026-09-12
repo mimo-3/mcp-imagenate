@@ -87,13 +87,17 @@ describe("createRegistry", () => {
     assert.equal(registry.defaultModel, "gpt-image-2.5-flare");
   });
 
-  it("lists the default model first", () => {
+  it("puts the default first among the OpenAI models", () => {
     // A caller that reads the list rather than `defaultModel` must not quietly
-    // land on a model with different pricing and latency, so the two are kept
-    // in step.
+    // land on a model that costs more, so the OpenAI provider registers the
+    // default first. Only within one provider: `models[0]` follows the
+    // provider registration order, so a Google key still leads the list.
     const registry = createRegistry({ openai: "k" });
     assert.equal(registry.models[0], registry.defaultModel);
-    assert.equal(registry.defaultModel, "gpt-image-2.5-flare");
+
+    const withGoogle = createRegistry({ google: "k", openai: "k" });
+    const openaiModels = withGoogle.models.filter((name) => name.startsWith("gpt-image"));
+    assert.equal(openaiModels[0], withGoogle.defaultModel);
   });
 
   it("registers Reve when only its key is supplied", () => {
