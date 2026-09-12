@@ -28,9 +28,9 @@ see [Tool: `generate_video`](#tool-generate_video).
 
 | Name                     | Model ID                 | Best for                                    |
 | ------------------------ | ------------------------ | ------------------------------------------- |
-| `gpt-image-2`            | `gpt-image-2`            | Previous generation, still the default here |
-| `gpt-image-2.5-flare`    | `gpt-image-2.5-flare`    | Fast generation, cheap at medium and high   |
-| `gpt-image-2.5-sunburst` | `gpt-image-2.5-sunburst` | Precise edits, slower than Flare            |
+| `gpt-image-2.5-flare`    | `gpt-image-2.5-flare`    | Fast generation, cheap at medium and high. The default here |
+| `gpt-image-2.5-sunburst` | `gpt-image-2.5-sunburst` | Precise edits, slower than Flare                            |
+| `gpt-image-2`            | `gpt-image-2`            | Previous generation                                         |
 
 These are the only models here that can return a transparent background — see
 [Transparent backgrounds](#transparent-backgrounds).
@@ -150,7 +150,7 @@ Add to your `claude_desktop_config.json`:
 | Parameter      | Type                                                   | Default           | Description                                                                   |
 | -------------- | ------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------------- |
 | `prompt`       | `string` (1-32,000 chars)                              | -                 | Text prompt describing the image                                              |
-| `model`        | see Models above                                       | `"gpt-image-2"`   | Model to use (available models depend on configured API keys)                 |
+| `model`        | see Models above                                       | `"gpt-image-2.5-flare"` | Model to use (available models depend on configured API keys)           |
 | `resolution`   | `"1K"` \| `"2K"` \| `"4K"`                            | `"1K"`            | Output image resolution                                                       |
 | `aspectRatio`  | see below                                              | `"1:1"`           | Aspect ratio of the image                                                     |
 | `mode`         | `"image"` \| `"image_and_text"`                        | `"image"`         | Return image only, or image with description (Google models only)             |
