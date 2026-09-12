@@ -49,7 +49,7 @@ export interface ImageRegistry {
  * Google-only setup must keep defaulting to nano-banana-2, not to the slower
  * and pricier nano-banana-pro.
  */
-const DEFAULT_MODEL_PREFERENCE = ["gpt-image-2"];
+const DEFAULT_MODEL_PREFERENCE = ["gpt-image-2.5-flare"];
 
 /**
  * Read provider keys from an environment-like object (standalone server
