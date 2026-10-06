@@ -97,6 +97,7 @@ export function createGoogleProvider(apiKey: string): ProviderRegistration {
   return {
     models: {
       "nano-banana-2": "gemini-3.1-flash-image-preview",
+      "nano-banana-2.1": "gemini-nano-banana-2.1",
       "nano-banana-pro": "gemini-3-pro-image-preview",
     },
     generate,

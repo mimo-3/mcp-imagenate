@@ -9,6 +9,7 @@ describe("provider creation", () => {
     const provider = createGoogleProvider("test-key");
     assert.deepEqual(Object.keys(provider.models), [
       "nano-banana-2",
+      "nano-banana-2.1",
       "nano-banana-pro",
     ]);
     assert.equal(typeof provider.generate, "function");
@@ -123,6 +124,7 @@ describe("createRegistry", () => {
     assert.equal(supports({ openai: "k" }, "gpt-image-2.5-flare"), true);
     assert.equal(supports({ openai: "k" }, "gpt-image-2.5-sunburst"), true);
     assert.equal(supports({ google: "k" }, "nano-banana-2"), undefined);
+    assert.equal(supports({ google: "k" }, "nano-banana-2.1"), undefined);
     assert.equal(supports({ google: "k" }, "nano-banana-pro"), undefined);
     assert.equal(supports({ flux: "k" }, "flux-2-pro"), undefined);
     assert.equal(supports({ reve: "k" }, "reve-image"), undefined);
