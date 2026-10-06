@@ -10,10 +10,11 @@ An MCP server for image generation using multiple providers: **Google Gemini**, 
 
 ### Google Gemini (Nano Banana)
 
-| Name              | Model ID                         | Best for                     |
-| ----------------- | -------------------------------- | ---------------------------- |
-| `nano-banana-2`   | `gemini-3.1-flash-image-preview` | Fast, high-volume generation |
-| `nano-banana-pro` | `gemini-3-pro-image-preview`     | Highest quality output       |
+| Name              | Model ID                         | Best for                                  |
+| ----------------- | -------------------------------- | ----------------------------------------- |
+| `nano-banana-2`   | `gemini-3.1-flash-image-preview` | Fast, high-volume generation              |
+| `nano-banana-2.1` | `gemini-nano-banana-2.1`         | Successor to Nano Banana 2 (1K/2K/4K only) |
+| `nano-banana-pro` | `gemini-3-pro-image-preview`     | Highest quality output                    |
 
 ### Google Gemini Omni (video)
 
