@@ -71,7 +71,7 @@ Things worth knowing before sending Reve a prompt written for another provider:
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - At least one provider API key
 
 ## Installation
