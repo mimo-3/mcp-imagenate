@@ -29,9 +29,14 @@ see [Tool: `generate_video`](#tool-generate_video).
 
 | Name                     | Model ID                 | Best for                                    |
 | ------------------------ | ------------------------ | ------------------------------------------- |
-| `gpt-image-2.5-flare`    | `gpt-image-2.5-flare`    | Fast generation, cheap at medium and high. The default here |
-| `gpt-image-2.5-sunburst` | `gpt-image-2.5-sunburst` | Precise edits, slower than Flare                            |
+| `gpt-image-2.6-flare`    | `gpt-image-2.6-flare`    | Fast generation. The default here                           |
+| `gpt-image-2.6-sunburst` | `gpt-image-2.6-sunburst` | Fine detail and precise edits                               |
+| `gpt-image-2.5-flare`    | `gpt-image-2.5-flare`    | Previous generation, fast generation                        |
+| `gpt-image-2.5-sunburst` | `gpt-image-2.5-sunburst` | Previous generation, precise edits                          |
 | `gpt-image-2`            | `gpt-image-2`            | Previous generation                                         |
+
+At low and medium quality, 2.6 uses about 3–4 times the image output tokens
+and costs about 3–4 times as much as 2.5; at high quality, costs are similar.
 
 These are the only models here that can return a transparent background — see
 [Transparent backgrounds](#transparent-backgrounds).
@@ -151,7 +156,7 @@ Add to your `claude_desktop_config.json`:
 | Parameter      | Type                                                   | Default           | Description                                                                   |
 | -------------- | ------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------------- |
 | `prompt`       | `string` (1-32,000 chars)                              | -                 | Text prompt describing the image                                              |
-| `model`        | see Models above                                       | `"gpt-image-2.5-flare"` | Model to use (available models depend on configured API keys)           |
+| `model`        | see Models above                                       | `"gpt-image-2.6-flare"` | Model to use (available models depend on configured API keys)           |
 | `resolution`   | `"1K"` \| `"2K"` \| `"4K"`                            | `"1K"`            | Output image resolution                                                       |
 | `aspectRatio`  | see below                                              | `"1:1"`           | Aspect ratio of the image                                                     |
 | `mode`         | `"image"` \| `"image_and_text"`                        | `"image"`         | Return image only, or image with description (Google models only)             |

@@ -69,7 +69,7 @@ describe("createOpenAIProvider", () => {
     );
   });
 
-  for (const modelId of ["gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]) {
+  for (const modelId of ["gpt-image-2.6-flare", "gpt-image-2.6-sunburst", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst"]) {
     it(`sends ${modelId} through to images.generate`, async () => {
       const { calls } = stubFetch();
       await createOpenAIProvider("k").generate(params({ modelId }));
