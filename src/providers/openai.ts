@@ -94,16 +94,13 @@ export function createOpenAIProvider(apiKey: string): ProviderRegistration {
 
   return {
     models: {
-      // Flare leads the list and is the default (see DEFAULT_MODEL_PREFERENCE):
-      // it is the fastest of the three and the cheapest at every quality.
-      // Registration order decides both `registry.models[0]` and the first
-      // entry of the MCP `model` enum, so it is kept in step with the default —
-      // a caller that reaches for either instead of `defaultModel` must not
-      // land on a model that costs more.
+      // Keep the default first so registry.models[0] and the MCP model enum
+      // agree with the default when OpenAI is the first configured provider.
+      // At low/medium quality, 2.6 uses about 3–4x the output tokens of 2.5;
+      // at high quality, usage is nearly equal.
+      "gpt-image-2.6-flare": "gpt-image-2.6-flare",
+      "gpt-image-2.6-sunburst": "gpt-image-2.6-sunburst",
       "gpt-image-2.5-flare": "gpt-image-2.5-flare",
-      // Two sibling models rather than one "gpt-image-2.5": OpenAI ships no
-      // bare 2.5 id. Sunburst trades latency for edit fidelity. Both cost a
-      // quarter of gpt-image-2 at medium and high.
       "gpt-image-2.5-sunburst": "gpt-image-2.5-sunburst",
       "gpt-image-2": "gpt-image-2",
     },
