@@ -5,6 +5,7 @@ import * as os from "os";
 import * as path from "path";
 
 import { generateVideoToDisk } from "../src/generate-video.js";
+import { createVideoRegistry } from "../src/providers/video-registry.js";
 import type { VideoRegistry } from "../src/providers/video-registry.js";
 import type { VideoGenerateParams, VideoGenerateResult } from "../src/providers/video-types.js";
 
@@ -94,6 +95,28 @@ describe("generateVideoToDisk", () => {
       );
     }
     assert.equal(called, false);
+  });
+
+  it("enforces the registered Omni model duration limits before generation", async () => {
+    const actual = createVideoRegistry({ google: "dummy" });
+    let calls = 0;
+    const registry: VideoRegistry = {
+      ...actual,
+      resolve(name) {
+        return { ...actual.resolve(name), generate: async () => {
+          calls++;
+          return { video: Buffer.from("clip"), mimeType: "video/mp4" };
+        } };
+      },
+    };
+    const run = (model: string, durationSeconds: number) => generateVideoToDisk({
+      registry, prompt: "test", model, durationSeconds, outputDir: tmpDir,
+    });
+    await run("gemini-omni-1.2-flash", 15);
+    assert.equal(calls, 1);
+    await assert.rejects(run("gemini-omni-1.2-flash", 16), /3–15 whole seconds/);
+    await assert.rejects(run("gemini-omni-1.1-flash", 11), /3–10 whole seconds/);
+    assert.equal(calls, 1);
   });
 
   it("rejects too many input images before reading any", async () => {

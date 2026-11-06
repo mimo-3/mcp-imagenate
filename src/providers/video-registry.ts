@@ -31,7 +31,7 @@ export function createVideoRegistry(keys: ProviderKeys): VideoRegistry {
         modelId,
         generate: registration.generate,
         minDurationSeconds: registration.minDurationSeconds,
-        maxDurationSeconds: registration.maxDurationSeconds,
+        maxDurationSeconds: registration.maxDurationSecondsByModel?.[friendly] ?? registration.maxDurationSeconds,
       };
       if (registration.maxInputImages !== undefined) {
         entry.maxInputImages = registration.maxInputImages;

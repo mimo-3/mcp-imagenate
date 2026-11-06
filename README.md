@@ -20,7 +20,8 @@ An MCP server for image generation using multiple providers: **Google Gemini**, 
 
 | Name         | Model ID               | Best for                                   |
 | ------------ | ---------------------- | ------------------------------------------ |
-| `gemini-omni-1.1-flash` | `gemini-omni-1.1-flash` | 3–10 s clips with audio, legible on-screen text |
+| `gemini-omni-1.2-flash` | `gemini-omni-1.2-flash` | The default here; 3–15 s clips with audio, about $0.07/s at 720p (30% less than 1.1) |
+| `gemini-omni-1.1-flash` | `gemini-omni-1.1-flash` | Previous generation; 3–10 s clips with audio, legible on-screen text |
 
 Uses the same `GEMINI_API_KEY`. Exposed through a separate `generate_video` tool —
 see [Tool: `generate_video`](#tool-generate_video).
@@ -215,17 +216,17 @@ saves it as an mp4.
 | Parameter               | Type                                          | Default        | Description                                                                                       |
 | ----------------------- | --------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------- |
 | `prompt`                | `string` (1-32,000 chars)                     | -              | Subject, motion, camera, and any on-screen text spelled out exactly                               |
-| `model`                 | `"gemini-omni-1.1-flash"`                                | `"gemini-omni-1.1-flash"` | Video model to use                                                                                |
-| `durationSeconds`       | integer `3`–`10`                              | `5`            | Clip length. Cost scales with the second, and so does generation time (roughly 1 min for 5 s, 2 min for 10 s) |
+| `model`                 | `"gemini-omni-1.2-flash"` \| `"gemini-omni-1.1-flash"` | `"gemini-omni-1.2-flash"` | Video model to use                                                                                |
+| `durationSeconds`       | integer `3`–`15`                              | `5`            | Clip length (up to `10` for 1.1). Cost scales with the second, and so does generation time (roughly 1 min for 5 s, 2 min for 10 s) |
 | `resolution`            | `"360p"` \| `"720p"` \| `"1080p"` \| `"4k"` | `"720p"`       | Playback resolution. `360p` is the cheapest and fastest; `1080p` and `4k` are upscaled from 720p |
 | `aspectRatio`           | `"16:9"` \| `"9:16"`                          | `"16:9"`       | Landscape or portrait                                                                             |
 | `outputDir`             | `string`                                      | `"."`          | Directory where the clip will be saved (same sandboxing as `generate_image`)                     |
 | `inputImages`           | `string[]`                                    | -              | Reference images sent ahead of the prompt: a first frame to animate, or subjects and styles to keep. Refer to them as `<IMAGE_REF_1>`, `<IMAGE_REF_2>`, … |
-| `previousInteractionId` | `string`                                      | -              | `interactionId` from an earlier result. Extends that clip instead of starting a new one; the prompt describes what happens next |
+| `previousInteractionId` | `string`                                      | -              | `interactionId` from an earlier result. Extends that clip instead of starting a new one; the prompt describes what happens next. Pass the same `model` that generated the clip |
 
 Things worth knowing:
 
-- A single request is capped at 10 s by the model. To go longer, pass the
+- A single request is capped at 15 s for 1.2 and 10 s for 1.1. To go longer, pass the
   returned `interactionId` back as `previousInteractionId`; each extension adds
   up to 10 s, and the whole clip is returned each time.
 - Text in the prompt is rendered on screen as written, including non-Latin
@@ -233,13 +234,13 @@ Things worth knowing:
 - Clips are fetched through Google's file endpoint rather than inlined in the
   JSON response, as the API documentation recommends above 4 MB. Expect one
   extra request per generation.
-- 720p costs about $0.10 per second of output; there is no free tier for this model.
+- At 720p, 1.2 costs about $0.07 per second and 1.1 about $0.10 per second; there is no free tier for these models.
 
 ### Response
 
 ```json
 {
-  "model": "gemini-omni-1.1-flash",
+  "model": "gemini-omni-1.2-flash",
   "savedFile": "/path/to/1788347054697-491db547.mp4",
   "settings": {
     "durationSeconds": 5,

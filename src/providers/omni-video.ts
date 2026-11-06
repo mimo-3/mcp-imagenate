@@ -14,9 +14,10 @@ import type {
 
 const DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 
-/** Per the model card: clips run 3–10 s at a fixed 24 fps. */
+/** Clip duration limits in seconds. */
 export const OMNI_MIN_DURATION_SECONDS = 3;
 export const OMNI_MAX_DURATION_SECONDS = 10;
+export const OMNI_1_2_MAX_DURATION_SECONDS = 15;
 
 export interface OmniVideoProviderOptions {
   /** Injected for tests; defaults to the global fetch. */
@@ -174,10 +175,12 @@ export function createOmniVideoProvider(
 
   return {
     models: {
+      "gemini-omni-1.2-flash": "gemini-omni-1.2-flash",
       "gemini-omni-1.1-flash": "gemini-omni-1.1-flash",
     },
     generate,
     minDurationSeconds: OMNI_MIN_DURATION_SECONDS,
     maxDurationSeconds: OMNI_MAX_DURATION_SECONDS,
+    maxDurationSecondsByModel: { "gemini-omni-1.2-flash": OMNI_1_2_MAX_DURATION_SECONDS },
   };
 }

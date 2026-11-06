@@ -41,9 +41,11 @@ export type VideoProviderFn = (
 export interface VideoProviderRegistration {
   models: Record<string, string>;
   generate: VideoProviderFn;
-  /** Shortest and longest clip the provider will produce, in seconds. */
+  /** Shortest and longest clip in seconds, for models without an override. */
   minDurationSeconds: number;
   maxDurationSeconds: number;
+  /** Replaces `maxDurationSeconds` for the listed friendly model names. */
+  maxDurationSecondsByModel?: Record<string, number>;
   /** See `ProviderRegistration.maxInputImages`. */
   maxInputImages?: number;
 }
