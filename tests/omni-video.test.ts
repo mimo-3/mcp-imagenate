@@ -49,9 +49,10 @@ function json(body: unknown, status = 200): Response {
 }
 
 describe("createOmniVideoProvider", () => {
-  it("registers gemini-omni-1.1-flash against the Omni 1.1 model id with the 3–10 s range", () => {
+  it("registers both Omni models with their duration limits", () => {
     const reg = createOmniVideoProvider("key");
-    assert.deepEqual(reg.models, { "gemini-omni-1.1-flash": "gemini-omni-1.1-flash" });
+    assert.deepEqual(reg.models, { "gemini-omni-1.2-flash": "gemini-omni-1.2-flash", "gemini-omni-1.1-flash": "gemini-omni-1.1-flash" });
+    assert.equal(reg.maxDurationSecondsByModel?.["gemini-omni-1.2-flash"], 15);
     assert.equal(reg.minDurationSeconds, 3);
     assert.equal(reg.maxDurationSeconds, 10);
   });
@@ -82,6 +83,17 @@ describe("createOmniVideoProvider", () => {
     assert.deepEqual(result.video, MP4);
     assert.equal(result.mimeType, "video/mp4");
     assert.equal(result.interactionId, "v1_abc");
+  });
+
+  it("passes Omni 1.2 and a 15 second duration to the API", async () => {
+    const { fetchImpl, calls } = fakeFetch([
+      () => json(interactionJson([{ type: "video", data: MP4.toString("base64") }])),
+    ]);
+    const reg = createOmniVideoProvider("key", { fetch: fetchImpl });
+    await reg.generate(baseParams({ modelId: "gemini-omni-1.2-flash", durationSeconds: 15 }));
+    const body = JSON.parse(String(calls[0].init?.body));
+    assert.equal(body.model, "gemini-omni-1.2-flash");
+    assert.equal(body.response_format.duration, "15s");
   });
 
   it("sends reference images ahead of the prompt as typed parts", async () => {
