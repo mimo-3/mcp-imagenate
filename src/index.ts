@@ -130,7 +130,7 @@ const GenerateImageSchema = {
 
 const server = new McpServer({
   name: "mcp-imagenate",
-  version: "0.10.0",
+  version: "0.11.0",
 });
 
 server.registerTool(
@@ -193,8 +193,10 @@ server.registerTool(
 if (videoRegistry.models.length > 0) {
   const videoModels = videoRegistry.models;
   const defaultVideoModel = videoRegistry.defaultModel!;
-  const { minDurationSeconds, maxDurationSeconds } =
-    videoRegistry.resolve(defaultVideoModel);
+  const videoLimits = videoModels.map((model) => ({ model, ...videoRegistry.resolve(model) }));
+  const minDurationSeconds = Math.min(...videoLimits.map((limit) => limit.minDurationSeconds));
+  const maxDurationSeconds = Math.max(...videoLimits.map((limit) => limit.maxDurationSeconds));
+  const modelDurationLimits = videoLimits.map(({ model, maxDurationSeconds }) => `${model}: ${maxDurationSeconds}s`).join(", ");
 
   const GenerateVideoSchema = {
     prompt: z
@@ -217,7 +219,7 @@ if (videoRegistry.models.length > 0) {
       .max(maxDurationSeconds)
       .default(5)
       .describe(
-        `Clip length in whole seconds (${minDurationSeconds}–${maxDurationSeconds}). ` +
+        `Clip length in whole seconds (${minDurationSeconds}–${maxDurationSeconds}). Model maximums: ${modelDurationLimits}. ` +
           "Longer clips cost proportionally more and take longer to generate",
       ),
 
