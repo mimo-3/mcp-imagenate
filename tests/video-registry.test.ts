@@ -11,10 +11,12 @@ describe("createVideoRegistry", () => {
     assert.throws(() => reg.resolve("gemini-omni-1.1-flash"), /No video models are available/);
   });
 
-  it("exposes gemini-omni-1.1-flash when a Google key is set", () => {
+  it("exposes both Omni models when a Google key is set", () => {
     const reg = createVideoRegistry({ google: "g" });
-    assert.deepEqual(reg.models, ["gemini-omni-1.1-flash"]);
-    assert.equal(reg.defaultModel, "gemini-omni-1.1-flash");
+    assert.deepEqual(reg.models, ["gemini-omni-1.2-flash", "gemini-omni-1.1-flash"]);
+    assert.equal(reg.defaultModel, "gemini-omni-1.2-flash");
+    assert.equal(reg.resolve("gemini-omni-1.2-flash").maxDurationSeconds, 15);
+    assert.equal(reg.resolve("gemini-omni-1.2-flash").modelId, "gemini-omni-1.2-flash");
     const resolved = reg.resolve("gemini-omni-1.1-flash");
     assert.equal(resolved.modelId, "gemini-omni-1.1-flash");
     assert.equal(resolved.minDurationSeconds, 3);
@@ -23,6 +25,6 @@ describe("createVideoRegistry", () => {
 
   it("names the available models when asked for an unknown one", () => {
     const reg = createVideoRegistry({ google: "g" });
-    assert.throws(() => reg.resolve("veo"), /Unknown video model: veo\. Available: gemini-omni-1.1-flash/);
+    assert.throws(() => reg.resolve("veo"), /Unknown video model: veo\. Available: gemini-omni-1.2-flash, gemini-omni-1.1-flash/);
   });
 });
