@@ -258,7 +258,8 @@ if (videoRegistry.models.length > 0) {
       .optional()
       .describe(
         "interactionId from an earlier generate_video result. Set it to extend that clip " +
-          "instead of starting a new one; the prompt then describes what happens next.",
+          "instead of starting a new one; the prompt then describes what happens next. " +
+          "Pass the same model that generated the clip.",
       ),
   };
 

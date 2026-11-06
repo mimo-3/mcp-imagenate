@@ -222,7 +222,7 @@ saves it as an mp4.
 | `aspectRatio`           | `"16:9"` \| `"9:16"`                          | `"16:9"`       | Landscape or portrait                                                                             |
 | `outputDir`             | `string`                                      | `"."`          | Directory where the clip will be saved (same sandboxing as `generate_image`)                     |
 | `inputImages`           | `string[]`                                    | -              | Reference images sent ahead of the prompt: a first frame to animate, or subjects and styles to keep. Refer to them as `<IMAGE_REF_1>`, `<IMAGE_REF_2>`, … |
-| `previousInteractionId` | `string`                                      | -              | `interactionId` from an earlier result. Extends that clip instead of starting a new one; the prompt describes what happens next |
+| `previousInteractionId` | `string`                                      | -              | `interactionId` from an earlier result. Extends that clip instead of starting a new one; the prompt describes what happens next. Pass the same `model` that generated the clip |
 
 Things worth knowing:
 
