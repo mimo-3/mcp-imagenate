@@ -38,7 +38,7 @@ const videoRegistry = createVideoRegistry(keys);
 
 if (registry.models.length === 0) {
   console.error(
-    "Error: No API keys configured. Set at least one of: GEMINI_API_KEY / NANO_BANANA_API_KEY, OPENAI_API_KEY / GPT_IMAGE_API_KEY, BFL_API_KEY, REVE_API_KEY / REVE_API_TOKEN",
+    "Error: No API keys configured. Set at least one of: GEMINI_API_KEY / NANO_BANANA_API_KEY, OPENAI_API_KEY / GPT_IMAGE_API_KEY / GPT_IMAGE_API_KEYS_FILE, BFL_API_KEY, REVE_API_KEY / REVE_API_TOKEN",
   );
   process.exit(1);
 }

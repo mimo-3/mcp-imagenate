@@ -1,4 +1,5 @@
 import { createGoogleProvider } from "./google.js";
+import { createOpenAIKeyPool } from "./openai-key-pool.js";
 import { createOpenAIProvider } from "./openai.js";
 import { createFluxProvider } from "./flux.js";
 import { createReveProvider } from "./reve.js";
@@ -25,6 +26,8 @@ export interface ResolvedModel {
 export interface ProviderKeys {
   google?: string;
   openai?: string;
+  /** Ordered JSON key file; takes precedence over openai. */
+  openaiKeysFile?: string;
   flux?: string;
   reve?: string;
 }
@@ -69,7 +72,8 @@ export function keysFromEnv(env: NodeJS.ProcessEnv = process.env): ProviderKeys 
   // REVE_API_TOKEN as well as the *_API_KEY name the other providers use.
   const reve = env.REVE_API_KEY || env.REVE_API_TOKEN;
   if (google) keys.google = google;
-  if (openai) keys.openai = openai;
+  if (env.GPT_IMAGE_API_KEYS_FILE) keys.openaiKeysFile = env.GPT_IMAGE_API_KEYS_FILE;
+  else if (openai) keys.openai = openai;
   if (flux) keys.flux = flux;
   if (reve) keys.reve = reve;
   return keys;
@@ -98,7 +102,8 @@ export function createRegistry(keys: ProviderKeys): ImageRegistry {
   };
 
   if (keys.google) register(createGoogleProvider(keys.google));
-  if (keys.openai) register(createOpenAIProvider(keys.openai));
+  if (keys.openaiKeysFile) register(createOpenAIKeyPool(keys.openaiKeysFile));
+  else if (keys.openai) register(createOpenAIProvider(keys.openai));
   if (keys.flux) register(createFluxProvider(keys.flux));
   if (keys.reve) register(createReveProvider(keys.reve));
 

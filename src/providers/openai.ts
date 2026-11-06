@@ -43,8 +43,11 @@ function resolveQuality(resolution: string): "low" | "medium" | "high" {
   return "low";
 }
 
-export function createOpenAIProvider(apiKey: string): ProviderRegistration {
-  const client = new OpenAI({ apiKey });
+export function createOpenAIProvider(
+  apiKey: string,
+  options: { maxRetries?: number } = {},
+): ProviderRegistration {
+  const client = new OpenAI({ apiKey, ...options });
 
   const generate = async (params: GenerateParams): Promise<GenerateResult> => {
     const size = resolveSize(params.resolution, params.aspectRatio);

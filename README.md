@@ -143,12 +143,25 @@ Add to your `claude_desktop_config.json`:
 | `NANO_BANANA_API_KEY`     | \*       | Alternative to `GEMINI_API_KEY` (takes precedence)                                                            |
 | `OPENAI_API_KEY`          | \*       | OpenAI API key                                                                                                |
 | `GPT_IMAGE_API_KEY`       | \*       | Alternative to `OPENAI_API_KEY` (takes precedence)                                                            |
+| `GPT_IMAGE_API_KEYS_FILE` | \*       | Path to an ordered JSON array of OpenAI keys. Takes precedence over both single-key variables. |
 | `BFL_API_KEY`             | \*       | BFL FLUX API key                                                                                              |
 | `REVE_API_KEY`            | \*       | Reve partner API token (from the API console at api.reve.com)                                                 |
 | `REVE_API_TOKEN`          | \*       | Alternative to `REVE_API_KEY` (`REVE_API_KEY` takes precedence)                                               |
 | `NANO_BANANA_OUTPUT_DIR`  | No       | Base directory for saved images. When set, all output and input paths are sandboxed within this directory. **Recommended for production.** |
 
 \* At least one provider API key must be set.
+
+### Multiple OpenAI keys
+
+Set `GPT_IMAGE_API_KEYS_FILE` in your MCP client’s `env` to the absolute path of a private JSON file containing the keys in order.
+
+```json
+["first-key", "second-key", "third-key"]
+```
+
+The server starts with the first key. On HTTP 429 `credit_balance_exhausted`, it switches to the next key, wrapping at the end. Each request tries each distinct key at most once. Other errors propagate.
+
+Servers using the same file share the active key across restarts through a SQLite database beside it. This requires built-in `node:sqlite` (Node.js 22.13 LTS or later LTS) and write access to that directory. Restart the server after editing the key list.
 
 ## Tool: `generate_image`
 
