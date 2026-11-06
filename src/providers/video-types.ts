@@ -44,6 +44,8 @@ export interface VideoProviderRegistration {
   /** Shortest and longest clip the provider will produce, in seconds. */
   minDurationSeconds: number;
   maxDurationSeconds: number;
+  /** Maximum duration overrides keyed by friendly model name. */
+  maxDurationSecondsByModel?: Record<string, number>;
   /** See `ProviderRegistration.maxInputImages`. */
   maxInputImages?: number;
 }
